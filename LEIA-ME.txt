@@ -1,0 +1,14 @@
+CARTÃO INSTAGRAM — ALEXANDRA G. S. DE FRAGA
+
+Como abrir:
+1. Extraia o ZIP para uma pasta.
+2. Abra a pasta no Visual Studio Code.
+3. Abra index.html no navegador (ou use a extensão Live Server).
+
+Como editar:
+- Textos: procure os trechos dentro de index.html.
+- Cores: altere as variáveis no bloco :root no começo do CSS.
+- Foto: substitua assets/foto-atendimento.jpg por outra foto com o mesmo nome.
+- O layout é HTML e CSS; os textos, cores e serviços são editáveis.
+
+O arquivo está preparado em formato quadrado para publicação no Instagram.
