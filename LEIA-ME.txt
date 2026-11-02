@@ -9,9 +9,11 @@ Como criar conteúdo:
 - Escolha Post quadrado, Story ou Landing page no editor.
 - Edite os textos, o nome, o WhatsApp e as cores; a pré-visualização atualiza na hora.
 - Para usar outra imagem, escolha um arquivo no campo Foto do material.
+- A barra de salvar e baixar fica no topo da tela, mesmo ao rolar o editor.
 - Posts e stories são baixados como PNG, no tamanho 1080 × 1080 ou 1080 × 1920.
-- A landing page é baixada como HTML responsivo, com os textos e o link de WhatsApp.
+- A landing page é baixada como HTML responsivo, com a foto incluída, os textos e o link de WhatsApp. Não é necessário copiar a pasta assets junto.
+- Salvar projeto baixa um arquivo projeto-alexandra.json com os textos, as cores, o formato e a foto. Guarde esse arquivo para editar depois.
+- Abrir projeto carrega esse arquivo JSON no editor. PNG e HTML são os materiais prontos; o JSON é a cópia editável.
 - As configurações de texto e cor ficam salvas no navegador. A foto escolhida vale enquanto a página estiver aberta.
-- Se a landing page usar a foto padrão, mantenha a pasta assets ao lado do HTML baixado. Uma foto escolhida no editor é incluída no HTML.
 
 O editor funciona localmente e não envia fotos ou textos para um servidor.
