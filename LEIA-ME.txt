@@ -16,4 +16,20 @@ Como criar conteúdo:
 - Abrir projeto carrega esse arquivo JSON no editor. PNG e HTML são os materiais prontos; o JSON é a cópia editável.
 - As configurações de texto e cor ficam salvas no navegador. A foto escolhida vale enquanto a página estiver aberta.
 
-O editor funciona localmente e não envia fotos ou textos para um servidor.
+Como divulgar:
+- No editor, clique em Projetos publicados. Ali você pode ver a landing, copiar o link, abrir a cópia editável ou baixar o projeto.
+- A primeira landing fica em https://pcfraga.github.io/cartao_psicopedagogia_alexandra/projetos/alexandra/
+- Compartilhe o link da landing no WhatsApp, Instagram ou onde desejar. Não envie o JSON para os clientes.
+- Os arquivos da landing e a cópia editável publicada ficam armazenados no repositório e no GitHub Pages; são públicos. Não publique informações privadas.
+- Salvar projeto e Baixar continuam sendo operações locais. Não atualizam a versão publicada.
+
+Como publicar ou atualizar pelo VS Code:
+1. Salve o projeto JSON no editor.
+2. Na pasta do projeto, execute com Node.js:
+   node scripts\publish-project.cjs "C:\caminho\projeto-alexandra.json" alexandra
+3. Faça commit e push dos arquivos alterados. O GitHub Pages publica a landing e atualiza o catálogo.
+- Use outro nome no lugar de alexandra para criar outro endereço. O mesmo nome atualiza a página existente.
+- Para abrir a cópia publicada no editor, use o site online ou Live Server (não file://).
+- A publicação direta por botão exige um serviço de armazenamento com autenticação; isso não faz parte desta versão estática.
+
+O editor não envia automaticamente fotos ou textos para um servidor. Somente arquivos incluídos no commit e enviados ao GitHub são publicados.

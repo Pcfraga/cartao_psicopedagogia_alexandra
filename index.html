@@ -95,6 +95,10 @@
     .upload-note { margin: 9px 0 0; color: #657187; font-size: 15px; line-height: 1.5; }
     .actions { display: grid; grid-template-columns: 1fr auto; gap: 10px; margin-top: 20px; }
     .button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      text-decoration: none;
       min-height: 52px;
       padding: 12px 20px;
       border: 0;
@@ -227,9 +231,10 @@
       <button class="button button-primary" id="export" type="button">Baixar imagem PNG</button>
       <button class="button button-secondary" id="save-project" type="button">Salvar projeto</button>
       <button class="button button-secondary" id="open-project" type="button">Abrir projeto</button>
+      <a class="button button-secondary" href="projetos/">Projetos publicados</a>
       <input id="project-file" type="file" accept=".json,application/json" hidden aria-label="Arquivo do projeto">
     </div>
-    <p class="save-help">Baixar: arquivo pronto para usar. Salvar projeto: textos, cores e foto para continuar editando depois.</p>
+    <p class="save-help">Salvar projeto guarda a cópia editável. Em Projetos publicados, acesse suas páginas e copie o link para divulgar. Salvar ou baixar não atualiza a publicação.</p>
     <p class="status" id="status" role="status" aria-live="polite"></p>
   </section>
   <main>
@@ -339,6 +344,7 @@
       </section>
     </div>
   </main>
+  <script src="landing-page.js"></script>
   <script>
     (() => {
       const defaults = {
@@ -390,7 +396,8 @@
 
       function contactUrl(phone) {
         const digits = phone.replace(/\D/g, "");
-        return digits ? `https://wa.me/${digits}` : "https://wa.me/";
+        const international = digits.length === 10 || digits.length === 11 ? `55${digits}` : digits;
+        return international ? `https://wa.me/${international}` : "https://wa.me/";
       }
 
       function updatePreview() {
@@ -518,19 +525,41 @@
         }
       });
       document.querySelector("#open-project").addEventListener("click", () => projectFile.click());
+      async function openProject(project) {
+        validateProject(project);
+        await loadImage(project.photo);
+        for (const key of Object.keys(defaults)) elements[key].value = project.values[key];
+        photoSource = project.photo;
+        elements.previewPhoto.src = photoSource;
+        elements.landingPhoto.src = photoSource;
+        elements.photo.value = "";
+        updatePreview();
+      }
+
+      async function openPublishedProject() {
+        const slug = new URLSearchParams(location.search).get("projeto");
+        if (slug === null) return;
+        try {
+          if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug)) throw new Error("Endereço de projeto inválido.");
+          if (location.protocol === "file:") {
+            throw new Error("Para abrir um projeto publicado, use o site online ou a extensão Live Server.");
+          }
+          setStatus("Carregando o projeto publicado...");
+          const response = await fetch(`projetos/${slug}/projeto.json`, { cache: "no-store" });
+          if (!response.ok) throw new Error("Não foi possível encontrar esse projeto publicado.");
+          await openProject(await response.json());
+          setStatus("Projeto publicado aberto. Salvar alterações não atualiza o site: é preciso republicar pelo GitHub.");
+        } catch (error) {
+          setStatus(error instanceof Error ? error.message : "Não foi possível abrir o projeto publicado.", true);
+        }
+      }
+
       projectFile.addEventListener("change", async () => {
         const file = projectFile.files[0];
         if (!file) return;
         try {
           const project = JSON.parse(await file.text());
-          validateProject(project);
-          await loadImage(project.photo);
-          for (const key of Object.keys(defaults)) elements[key].value = project.values[key];
-          photoSource = project.photo;
-          elements.previewPhoto.src = photoSource;
-          elements.landingPhoto.src = photoSource;
-          elements.photo.value = "";
-          updatePreview();
+          await openProject(project);
           setStatus("Projeto aberto com a foto. Você já pode continuar editando.");
         } catch (error) {
           setStatus(error instanceof SyntaxError ? "Esse arquivo não é um projeto JSON válido." :
@@ -636,21 +665,9 @@
         context.fillText(buttonText, width - pad - buttonWidth / 2, buttonY + buttonHeight / 2);
       }
 
-      function escapeHtml(text) {
-        return text.replace(/[&<>"']/g, (character) => ({
-          "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
-        })[character]);
-      }
-
       async function exportLanding(values) {
         const imagePath = await embeddedPhoto();
-        const page = `<!doctype html>
-<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${escapeHtml(values.name)} | ${escapeHtml(values.role)}</title>
-<style>*{box-sizing:border-box}body{margin:0;color:#17233c;font:16px Arial,sans-serif;line-height:1.55}.wrap{max-width:1080px;margin:auto}.nav{display:flex;justify-content:space-between;align-items:center;padding:18px 6%;color:${values.primary};font-weight:bold}.button{display:inline-block;padding:12px 20px;border-radius:99px;background:${values.accent};color:white;text-decoration:none;font-weight:bold}.hero{display:grid;grid-template-columns:1fr 1fr;align-items:center;background:#f3f7fc}.copy{padding:48px 9%}.eyebrow{color:${values.accent};font-size:13px;font-weight:bold;letter-spacing:.1em;text-transform:uppercase}.hero h1{margin:12px 0;color:${values.primary};font-size:clamp(34px,5vw,58px);line-height:1.08}.hero p{color:#5c6b82}.hero img{width:100%;height:100%;min-height:380px;object-fit:cover}.services{padding:46px 6%;text-align:center}.services h2{color:${values.primary}}.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}.item{padding:20px 14px;border:1px solid #e5ecf4;border-radius:14px;background:white;color:#53647b;font-weight:bold}.contact{padding:30px 6%;background:${values.primary};color:white;text-align:center}.contact h2{margin-top:0}@media(max-width:650px){.hero{grid-template-columns:1fr}.hero img{grid-row:1;min-height:260px;max-height:360px}.copy{padding:32px 7%}.grid{grid-template-columns:1fr 1fr}}</style></head>
-<body><main class="wrap"><nav class="nav"><span>${escapeHtml(values.name)} · ${escapeHtml(values.role)}</span><a class="button" href="${contactUrl(values.phone)}" target="_blank" rel="noopener">WhatsApp</a></nav>
-<section class="hero"><div class="copy"><div class="eyebrow">Aprender · Evoluir · Conquistar</div><h1>${escapeHtml(values.title)}</h1><p>${escapeHtml(values.subtitle)}</p><a class="button" href="${contactUrl(values.phone)}" target="_blank" rel="noopener">${escapeHtml(values.cta)} · ${escapeHtml(values.phone)}</a></div><img src="${imagePath}" alt="Atendimento psicopedagógico"></section>
-<section class="services"><h2>Um caminho de descobertas e conquistas</h2><div class="grid"><div class="item">Avaliação e intervenção personalizada</div><div class="item">Estímulo às habilidades cognitivas</div><div class="item">Apoio no aprendizado escolar</div><div class="item">Autonomia e autoestima</div></div></section>
-<footer class="contact"><h2>${escapeHtml(values.name)} · ${escapeHtml(values.role)}</h2><a class="button" href="${contactUrl(values.phone)}" target="_blank" rel="noopener">${escapeHtml(values.cta)} pelo WhatsApp</a></footer></main></body></html>`;
+        const page = createLandingPage(values, imagePath);
         const blob = new Blob([page], { type: "text/html;charset=utf-8" });
         downloadFile(blob, "landing-page-alexandra.html");
         setStatus("Landing page baixada com a foto incluída. O HTML está pronto para usar.");
@@ -734,6 +751,7 @@
 
       loadSavedValues();
       updatePreview();
+      openPublishedProject();
     })();
   </script>
 </body>
