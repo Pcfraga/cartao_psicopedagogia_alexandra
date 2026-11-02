@@ -3,95 +3,631 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Psicopedagoga Alexandra G. S. de Fraga</title>
+  <meta name="theme-color" content="#f5f7fb">
+  <title>Ateliê de conteúdo | Alexandra</title>
   <style>
     :root {
-      --navy: #092e61;
-      --green-whats: #25d366;
+      color-scheme: light;
+      font-family: Inter, "Segoe UI", Arial, sans-serif;
+      color: #17233c;
+      background: #f5f7fb;
+      font-synthesis: none;
+      text-rendering: optimizeLegibility;
+      --navy: #123d75;
+      --pink: #e83d83;
+      --gold: #f5b62e;
       --paper: #fffefa;
     }
     * { box-sizing: border-box; }
-    body {
-      margin: 0;
-      padding: 28px;
-      background: #e9edf4;
-      color: var(--navy);
-      font-family: "Trebuchet MS", Arial, sans-serif;
-    }
-    .card {
-      width: min(100%, 720px);
-      margin: auto;
-      background: var(--paper);
-      border-radius: 18px;
-      overflow: hidden;
-      box-shadow: 0 18px 55px #172b4930;
-    }
-    .poster {
-      display: block;
-      width: 100%;
-      height: auto;
-    }
-    .contato {
-      padding: 22px 20px 26px;
-      text-align: center;
-    }
-    .contato h2 {
-      margin: 0 0 14px;
-      font-size: clamp(18px, 3vw, 24px);
-    }
-    .whats {
-      display: inline-flex;
+    body { margin: 0; min-width: 320px; }
+    button, input, select, textarea { font: inherit; }
+    button { cursor: pointer; }
+    .topbar {
+      display: flex;
       align-items: center;
-      gap: 10px;
-      background: var(--green-whats);
+      justify-content: space-between;
+      gap: 20px;
+      padding: 18px clamp(18px, 4vw, 56px);
+      background: #fff;
+      border-bottom: 1px solid #e8ecf3;
+    }
+    .brand { display: flex; align-items: center; gap: 12px; }
+    .brand-mark {
+      display: grid;
+      width: 42px;
+      height: 42px;
+      place-items: center;
+      border-radius: 14px;
       color: #fff;
-      text-decoration: none;
-      font-weight: 800;
-      font-size: clamp(17px, 2.8vw, 22px);
-      padding: 14px 28px;
-      border-radius: 60px;
-      box-shadow: 0 6px 18px #25d36655;
-      transition: transform .15s ease, box-shadow .15s ease;
+      background: linear-gradient(140deg, #1976d2, #e83d83);
+      font-size: 23px;
     }
-    .whats:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 10px 24px #25d36677;
+    .brand strong { display: block; font-size: 15px; }
+    .brand small { display: block; margin-top: 3px; color: #768197; font-size: 12px; }
+    .topbar-note { color: #68758a; font-size: 13px; }
+    main { width: min(1380px, 100%); margin: 0 auto; padding: 38px clamp(18px, 4vw, 56px) 56px; }
+    .intro { margin-bottom: 26px; }
+    .eyebrow { color: #3974bc; font-size: 11px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; }
+    h1 { margin: 8px 0; font-size: clamp(26px, 3vw, 36px); letter-spacing: -.04em; }
+    .intro p { margin: 0; color: #6d788c; line-height: 1.6; }
+    .workspace { display: grid; grid-template-columns: minmax(280px, 390px) minmax(0, 1fr); gap: 28px; align-items: start; }
+    .panel, .preview-panel { border: 1px solid #e6eaf1; border-radius: 20px; background: #fff; box-shadow: 0 12px 35px #23385a0b; }
+    .panel { padding: 22px; }
+    .panel-heading { margin: 0 0 19px; font-size: 17px; }
+    .field { margin-bottom: 16px; }
+    .field label, .field-label { display: block; margin-bottom: 7px; color: #38465d; font-size: 12px; font-weight: 700; }
+    .field input, .field select, .field textarea {
+      width: 100%;
+      min-height: 42px;
+      padding: 10px 12px;
+      border: 1px solid #dfe5ee;
+      border-radius: 10px;
+      outline: none;
+      color: #17233c;
+      background: #fff;
     }
-    .whats .icon { font-size: 1.3em; }
-    .contato small {
-      display: block;
-      margin-top: 12px;
-      font-family: Georgia, serif;
-      font-style: italic;
-      color: #4c5a70;
-      font-size: 14px;
+    .field textarea { min-height: 72px; resize: vertical; line-height: 1.45; }
+    .field input:focus, .field select:focus, .field textarea:focus { border-color: #3981d1; box-shadow: 0 0 0 3px #3981d122; }
+    .field input[type="color"] { min-height: 42px; padding: 4px; }
+    .two-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .upload {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px;
+      border: 1px dashed #cbd6e5;
+      border-radius: 12px;
+      background: #f9fbfe;
     }
-    .edit-note {
-      max-width: 720px;
-      margin: 14px auto 0;
-      color: #4c5a70;
-      font: 14px Arial, sans-serif;
-      text-align: center;
+    .upload input { min-width: 0; width: 100%; color: #66748a; font-size: 12px; }
+    .upload-note { margin: 7px 0 0; color: #7a8698; font-size: 11px; line-height: 1.5; }
+    .actions { display: grid; grid-template-columns: 1fr auto; gap: 10px; margin-top: 20px; }
+    .button {
+      min-height: 44px;
+      padding: 0 16px;
+      border: 0;
+      border-radius: 11px;
+      font-weight: 750;
+      transition: transform .15s, box-shadow .15s;
     }
-    @media (max-width: 650px) {
-      body { padding: 0; background: white; }
-      .card { border-radius: 0; box-shadow: none; }
+    .button:hover { transform: translateY(-1px); }
+    .button-primary { color: #fff; background: #145da5; box-shadow: 0 7px 16px #145da530; }
+    .button-secondary { color: #33445d; background: #eef2f8; }
+    .button:focus-visible { outline: 3px solid #f5b62e; outline-offset: 2px; }
+    .status { min-height: 18px; margin: 10px 0 0; color: #537149; font-size: 12px; }
+    .preview-panel { min-width: 0; padding: 22px; }
+    .preview-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 16px; }
+    .preview-head h2 { margin: 0; font-size: 16px; }
+    .preview-head span { color: #8993a3; font-size: 12px; }
+    .stage {
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      min-height: 520px;
+      max-height: 790px;
+      overflow: auto;
+      padding: 24px;
+      border: 1px solid #e9edf4;
+      border-radius: 15px;
+      background-color: #f0f3f8;
+      background-image: radial-gradient(#d5dce7 1px, transparent 1px);
+      background-size: 18px 18px;
     }
+    .artwork {
+      position: relative;
+      isolation: isolate;
+      width: min(100%, 560px);
+      aspect-ratio: 1;
+      overflow: hidden;
+      border-radius: 8px;
+      color: #fff;
+      background: #dce8f4;
+      box-shadow: 0 15px 32px #1c2a4026;
+    }
+    .artwork-story { width: min(100%, 340px); aspect-ratio: 9 / 16; }
+    .artwork-landing {
+      width: min(100%, 650px);
+      aspect-ratio: auto;
+      overflow: hidden;
+      color: #17233c;
+      background: #fff;
+    }
+    .art-photo { position: absolute; inset: 0; z-index: -2; width: 100%; height: 100%; object-fit: cover; }
+    .artwork-square .art-photo { object-position: center 38%; }
+    .artwork-story .art-photo { object-position: center 28%; }
+    .art-shade {
+      position: absolute;
+      inset: 0;
+      z-index: -1;
+      background: linear-gradient(180deg, #10234300 28%, #10234340 53%, #092e61ee 100%);
+    }
+    .art-copy { position: absolute; right: 7%; bottom: 7%; left: 7%; }
+    .artwork-story .art-copy { bottom: 6%; }
+    .art-kicker { margin: 0 0 9px; color: #ffe083; font-size: clamp(11px, 2vw, 14px); font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
+    .art-title { max-width: 92%; margin: 0; font-size: clamp(27px, 4.5vw, 48px); line-height: 1.03; letter-spacing: -.045em; text-wrap: balance; }
+    .artwork-story .art-title { font-size: clamp(30px, 6vw, 48px); }
+    .art-subtitle { max-width: 90%; margin: 12px 0 16px; color: #f5f8ff; font-size: clamp(13px, 2vw, 17px); line-height: 1.4; }
+    .art-footer { display: flex; justify-content: space-between; align-items: end; gap: 12px; border-top: 1px solid #ffffff70; padding-top: 12px; }
+    .art-name { margin: 0; font-size: clamp(12px, 2vw, 16px); font-weight: 800; }
+    .art-role { margin: 3px 0 0; color: #dce9ff; font-size: 11px; }
+    .art-cta { flex: 0 0 auto; padding: 9px 13px; border-radius: 99px; color: #fff; background: var(--pink); font-size: 11px; font-weight: 800; }
+    .artwork-story .art-kicker { font-size: 12px; }
+    .artwork-story .art-subtitle { margin: 13px 0 21px; font-size: 16px; }
+    .artwork-story .art-name { font-size: 14px; }
+    .artwork-story .art-cta { font-size: 12px; }
+    .landing-nav { display: flex; justify-content: space-between; align-items: center; padding: 15px 6%; }
+    .landing-logo { color: var(--navy); font-size: 15px; font-weight: 850; }
+    .landing-nav .art-cta { padding: 9px 13px; text-decoration: none; }
+    .landing-hero { display: grid; grid-template-columns: 1fr 1fr; min-height: 265px; }
+    .landing-hero-copy { display: flex; flex-direction: column; justify-content: center; align-items: flex-start; padding: 26px 8%; background: #f3f7fc; }
+    .landing-hero-copy .art-kicker { color: var(--pink); }
+    .landing-hero-copy .art-title { color: var(--navy); font-size: clamp(26px, 4vw, 39px); }
+    .landing-hero-copy .art-subtitle { color: #5c6b82; font-size: 13px; }
+    .landing-hero-copy .art-cta { text-decoration: none; }
+    .landing-hero-photo { width: 100%; height: 100%; min-height: 265px; object-fit: cover; }
+    .landing-services { padding: 22px 6% 25px; text-align: center; }
+    .landing-services h3 { margin: 0 0 15px; color: var(--navy); font-size: 17px; }
+    .service-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 9px; }
+    .service-item { min-height: 66px; padding: 11px 8px; border: 1px solid #e5ecf4; border-radius: 12px; background: #fff; color: #53647b; font-size: 10px; font-weight: 700; line-height: 1.4; }
+    .landing-bottom { padding: 15px 6%; color: #fff; background: var(--navy); text-align: center; }
+    .landing-bottom strong { display: block; font-size: 15px; }
+    .landing-bottom a { display: inline-block; margin-top: 9px; padding: 9px 17px; border-radius: 99px; color: #fff; background: var(--pink); font-size: 12px; font-weight: 800; text-decoration: none; }
+    @media (max-width: 850px) {
+      main { padding-top: 27px; }
+      .workspace { grid-template-columns: minmax(260px, 340px) minmax(0, 1fr); gap: 16px; }
+      .panel, .preview-panel { padding: 17px; }
+      .stage { min-height: 440px; padding: 15px; }
+      .service-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 680px) {
+      .topbar-note { display: none; }
+      main { padding: 24px 14px 36px; }
+      .workspace { grid-template-columns: 1fr; }
+      .panel { order: 1; }
+      .preview-panel { order: 2; }
+      .stage { min-height: 360px; max-height: 70vh; }
+      .artwork-story { width: min(100%, 270px); }
+      .landing-hero { grid-template-columns: 1fr; }
+      .landing-hero-photo { min-height: 220px; max-height: 280px; grid-row: 1; }
+      .landing-hero-copy { padding: 24px 7%; }
+    }
+    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; } }
   </style>
 </head>
 <body>
-  <main class="card">
-    <img class="poster" src="assets/Psicopedagogia_ Aprender e Conquistar.png"
-         alt="Cartaz: Psicopedagoga Alexandra G. S. de Fraga — Avaliação e Intervenção Personalizada, Estímulo às Habilidades Cognitivas, Apoio no Aprendizado Escolar, Desenvolvimento da Autonomia e da Autoestima">
-
-    <section class="contato">
-      <h2>☎ Entre em contato!</h2>
-      <a class="whats" href="https://wa.me/5551981343844" target="_blank" rel="noopener">
-        <span class="icon">💬</span> WhatsApp (51) 98134-3844
-      </a>
-      <small>Vamos juntos construir novas conquistas!</small>
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-mark" aria-hidden="true">✦</span>
+      <div><strong>Ateliê da Alexandra</strong><small>Conteúdo para aprender, evoluir e conquistar</small></div>
+    </div>
+    <span class="topbar-note">Suas alterações ficam salvas neste navegador</span>
+  </header>
+  <main>
+    <section class="intro">
+      <span class="eyebrow">Seu espaço criativo</span>
+      <h1>Crie posts e uma landing page</h1>
+      <p>Edite os textos, escolha uma foto e veja o resultado na hora. Sem precisar instalar nada.</p>
     </section>
+    <div class="workspace">
+      <section class="panel" aria-labelledby="editor-heading">
+        <h2 class="panel-heading" id="editor-heading">Personalize seu material</h2>
+        <div class="field">
+          <label for="format">O que você quer criar?</label>
+          <select id="format">
+            <option value="square">Post quadrado · Instagram</option>
+            <option value="story">Story · Instagram / WhatsApp</option>
+            <option value="landing">Landing page · site de uma página</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="title">Título principal</label>
+          <textarea id="title" maxlength="100">Aprender também é uma forma de ser feliz!</textarea>
+        </div>
+        <div class="field">
+          <label for="subtitle">Texto de apoio</label>
+          <textarea id="subtitle" maxlength="180">Acompanhamento psicopedagógico acolhedor para cada etapa do aprendizado.</textarea>
+        </div>
+        <div class="two-fields">
+          <div class="field">
+            <label for="name">Seu nome</label>
+            <input id="name" maxlength="60" value="Alexandra G. S. de Fraga">
+          </div>
+          <div class="field">
+            <label for="role">Profissão</label>
+            <input id="role" maxlength="45" value="Psicopedagoga">
+          </div>
+        </div>
+        <div class="field">
+          <label for="cta">Texto do botão</label>
+          <input id="cta" maxlength="32" value="Fale comigo">
+        </div>
+        <div class="field">
+          <label for="phone">WhatsApp com DDD</label>
+          <input id="phone" inputmode="tel" maxlength="20" value="(51) 98134-3844">
+        </div>
+        <div class="field">
+          <label for="photo">Foto do material</label>
+          <div class="upload"><input id="photo" type="file" accept="image/*" aria-describedby="photo-note"></div>
+          <p class="upload-note" id="photo-note">Escolha uma imagem do seu dispositivo. Ela será usada somente neste navegador.</p>
+        </div>
+        <div class="two-fields">
+          <div class="field">
+            <label for="primary-color">Cor principal</label>
+            <input id="primary-color" type="color" value="#123d75">
+          </div>
+          <div class="field">
+            <label for="accent-color">Cor de destaque</label>
+            <input id="accent-color" type="color" value="#e83d83">
+          </div>
+        </div>
+        <div class="actions">
+          <button class="button button-primary" id="export" type="button">Baixar imagem PNG</button>
+          <button class="button button-secondary" id="reset" type="button" aria-label="Restaurar conteúdo inicial">Restaurar</button>
+        </div>
+        <p class="status" id="status" role="status" aria-live="polite"></p>
+      </section>
+      <section class="preview-panel" aria-labelledby="preview-heading">
+        <div class="preview-head">
+          <h2 id="preview-heading">Pré-visualização</h2>
+          <span id="format-hint">1080 × 1080 px</span>
+        </div>
+        <div class="stage">
+          <article class="artwork artwork-square" id="artwork" aria-label="Pré-visualização do material">
+            <img class="art-photo" id="preview-photo" src="assets/foto-atendimento.jpg" alt="">
+            <div class="art-shade" id="art-shade"></div>
+            <div class="art-copy" id="post-copy">
+              <p class="art-kicker">Aprender · Evoluir · Conquistar</p>
+              <h3 class="art-title" id="preview-title">Aprender também é uma forma de ser feliz!</h3>
+              <p class="art-subtitle" id="preview-subtitle">Acompanhamento psicopedagógico acolhedor para cada etapa do aprendizado.</p>
+              <div class="art-footer">
+                <div><p class="art-name" id="preview-name">Alexandra G. S. de Fraga</p><p class="art-role" id="preview-role">Psicopedagoga</p></div>
+                <span class="art-cta" id="preview-cta">Fale comigo</span>
+              </div>
+            </div>
+            <div class="landing-content" id="landing-content" hidden>
+              <nav class="landing-nav"><span class="landing-logo" id="landing-logo">Alexandra · Psicopedagogia</span><a class="art-cta landing-contact" id="landing-top-cta" href="#" target="_blank" rel="noopener">WhatsApp</a></nav>
+              <section class="landing-hero">
+                <div class="landing-hero-copy">
+                  <p class="art-kicker">Aprender · Evoluir · Conquistar</p>
+                  <h3 class="art-title landing-title" id="landing-title"></h3>
+                  <p class="art-subtitle landing-subtitle" id="landing-subtitle"></p>
+                  <a class="art-cta landing-contact" id="landing-hero-cta" href="#" target="_blank" rel="noopener"></a>
+                </div>
+                <img class="landing-hero-photo" id="landing-photo" src="assets/foto-atendimento.jpg" alt="Atendimento psicopedagógico">
+              </section>
+              <section class="landing-services">
+                <h3>Um caminho de descobertas e conquistas</h3>
+                <div class="service-grid">
+                  <div class="service-item">Avaliação e intervenção personalizada</div>
+                  <div class="service-item">Estímulo às habilidades cognitivas</div>
+                  <div class="service-item">Apoio no aprendizado escolar</div>
+                  <div class="service-item">Autonomia e autoestima</div>
+                </div>
+              </section>
+              <section class="landing-bottom"><strong id="landing-name">Alexandra G. S. de Fraga · Psicopedagoga</strong><a class="landing-contact" id="landing-bottom-cta" href="#" target="_blank" rel="noopener"></a></section>
+            </div>
+          </article>
+        </div>
+      </section>
+    </div>
   </main>
-  <p class="edit-note">Para editar, abra este arquivo no VS Code e altere os textos e cores no início do CSS.</p>
+  <script>
+    (() => {
+      const defaults = {
+        format: "square",
+        title: "Aprender também é uma forma de ser feliz!",
+        subtitle: "Acompanhamento psicopedagógico acolhedor para cada etapa do aprendizado.",
+        name: "Alexandra G. S. de Fraga",
+        role: "Psicopedagoga",
+        cta: "Fale comigo",
+        phone: "(51) 98134-3844",
+        primary: "#123d75",
+        accent: "#e83d83"
+      };
+      const elements = {
+        format: document.querySelector("#format"),
+        title: document.querySelector("#title"),
+        subtitle: document.querySelector("#subtitle"),
+        name: document.querySelector("#name"),
+        role: document.querySelector("#role"),
+        cta: document.querySelector("#cta"),
+        phone: document.querySelector("#phone"),
+        primary: document.querySelector("#primary-color"),
+        accent: document.querySelector("#accent-color"),
+        photo: document.querySelector("#photo"),
+        artwork: document.querySelector("#artwork"),
+        previewPhoto: document.querySelector("#preview-photo"),
+        landingPhoto: document.querySelector("#landing-photo"),
+        status: document.querySelector("#status"),
+        export: document.querySelector("#export"),
+        hint: document.querySelector("#format-hint"),
+        postCopy: document.querySelector("#post-copy"),
+        landingContent: document.querySelector("#landing-content")
+      };
+      let photoSource = "assets/foto-atendimento.jpg";
+
+      function readValues() {
+        return {
+          format: elements.format.value,
+          title: elements.title.value.trim(),
+          subtitle: elements.subtitle.value.trim(),
+          name: elements.name.value.trim(),
+          role: elements.role.value.trim(),
+          cta: elements.cta.value.trim(),
+          phone: elements.phone.value.trim(),
+          primary: elements.primary.value,
+          accent: elements.accent.value
+        };
+      }
+
+      function contactUrl(phone) {
+        const digits = phone.replace(/\D/g, "");
+        return digits ? `https://wa.me/${digits}` : "https://wa.me/";
+      }
+
+      function updatePreview() {
+        const values = readValues();
+        const isLanding = values.format === "landing";
+        const isStory = values.format === "story";
+        elements.artwork.className = `artwork artwork-${values.format}`;
+        elements.artwork.style.setProperty("--navy", values.primary);
+        elements.artwork.style.setProperty("--pink", values.accent);
+        elements.artwork.style.setProperty("--primary", values.primary);
+        elements.artwork.style.setProperty("--accent", values.accent);
+        elements.postCopy.hidden = isLanding;
+        elements.landingContent.hidden = !isLanding;
+        elements.hint.textContent = isLanding ? "Página responsiva · exporte em HTML" : isStory ? "1080 × 1920 px" : "1080 × 1080 px";
+        elements.export.textContent = isLanding ? "Baixar landing page HTML" : "Baixar imagem PNG";
+        document.querySelector("#preview-title").textContent = values.title || "Seu título aparece aqui";
+        document.querySelector("#preview-subtitle").textContent = values.subtitle || "Seu texto de apoio aparece aqui";
+        document.querySelector("#preview-name").textContent = values.name || "Seu nome";
+        document.querySelector("#preview-role").textContent = values.role || "Sua profissão";
+        document.querySelector("#preview-cta").textContent = values.cta || "Fale comigo";
+        document.querySelector("#landing-logo").textContent = `${values.name || "Seu nome"} · ${values.role || "Psicopedagogia"}`;
+        document.querySelector("#landing-title").textContent = values.title || "Seu título aparece aqui";
+        document.querySelector("#landing-subtitle").textContent = values.subtitle || "Seu texto de apoio aparece aqui";
+        document.querySelector("#landing-name").textContent = `${values.name || "Seu nome"} · ${values.role || "Psicopedagoga"}`;
+        document.querySelectorAll(".landing-contact").forEach((link) => {
+          link.href = contactUrl(values.phone);
+          link.textContent = `${values.cta || "Fale comigo"} · ${values.phone || "WhatsApp"}`;
+        });
+        document.querySelector("#landing-top-cta").textContent = "WhatsApp";
+        elements.artwork.style.backgroundColor = values.primary;
+        try {
+          localStorage.setItem("alexandra-content-studio", JSON.stringify(values));
+        } catch (error) {
+          elements.status.textContent = "Não foi possível salvar as configurações neste navegador.";
+        }
+      }
+
+      function loadSavedValues() {
+        try {
+          const saved = JSON.parse(localStorage.getItem("alexandra-content-studio") || "null");
+          if (!saved || typeof saved !== "object") return;
+          for (const key of Object.keys(defaults)) {
+            if (typeof saved[key] === "string" && elements[key]) elements[key].value = saved[key];
+          }
+        } catch (error) {
+          elements.status.textContent = "As configurações salvas não puderam ser carregadas.";
+        }
+      }
+
+      function setStatus(message, isError = false) {
+        elements.status.textContent = message;
+        elements.status.style.color = isError ? "#ad3030" : "#537149";
+      }
+
+      function wrapText(context, text, maxWidth) {
+        const words = text.split(/\s+/).filter(Boolean);
+        const lines = [];
+        let line = "";
+        for (const word of words) {
+          const candidate = line ? `${line} ${word}` : word;
+          if (line && context.measureText(candidate).width > maxWidth) {
+            lines.push(line);
+            line = word;
+          } else {
+            line = candidate;
+          }
+        }
+        if (line) lines.push(line);
+        return lines;
+      }
+
+      function drawText(context, text, x, y, maxWidth, lineHeight, maxLines) {
+        const lines = wrapText(context, text, maxWidth).slice(0, maxLines);
+        const allLines = wrapText(context, text, maxWidth);
+        if (allLines.length > maxLines && lines.length) {
+          let lastLine = lines[lines.length - 1];
+          while (lastLine && context.measureText(`${lastLine}…`).width > maxWidth) {
+            lastLine = lastLine.slice(0, -1);
+          }
+          lines[lines.length - 1] = `${lastLine}…`;
+        }
+        lines.forEach((line, index) => context.fillText(line, x, y + index * lineHeight, maxWidth));
+        return lines.length;
+      }
+
+      function drawCover(context, image, width, height, positionY = 0.34) {
+        const scale = Math.max(width / image.naturalWidth, height / image.naturalHeight);
+        const sourceWidth = width / scale;
+        const sourceHeight = height / scale;
+        const sourceX = (image.naturalWidth - sourceWidth) / 2;
+        const sourceY = Math.max(0, Math.min(image.naturalHeight - sourceHeight, image.naturalHeight * positionY - sourceHeight / 2));
+        context.drawImage(image, sourceX, sourceY, sourceWidth, sourceHeight, 0, 0, width, height);
+      }
+
+      function renderPost(context, image, values) {
+        const width = context.canvas.width;
+        const height = context.canvas.height;
+        const isStory = height > width;
+        drawCover(context, image, width, height, isStory ? 0.29 : 0.36);
+        const gradient = context.createLinearGradient(0, height * (isStory ? 0.43 : 0.45), 0, height);
+        gradient.addColorStop(0, "rgba(9, 35, 69, 0)");
+        gradient.addColorStop(0.35, `${values.primary}b8`);
+        gradient.addColorStop(1, values.primary);
+        context.fillStyle = gradient;
+        context.fillRect(0, 0, width, height);
+        const pad = width * (isStory ? 0.085 : 0.075);
+        let y = height * (isStory ? 0.51 : 0.57);
+        context.textAlign = "left";
+        context.textBaseline = "top";
+        context.fillStyle = "#ffe083";
+        context.font = `800 ${isStory ? 27 : 21}px Arial, sans-serif`;
+        context.fillText("APRENDER · EVOLUIR · CONQUISTAR", pad, y);
+        y += isStory ? 56 : 48;
+        context.fillStyle = "#ffffff";
+        context.font = `800 ${isStory ? 62 : 54}px Arial, sans-serif`;
+        const titleLines = drawText(context, values.title || "Seu título aparece aqui", pad, y, width - pad * 2, isStory ? 70 : 60, isStory ? 3 : 2);
+        y += titleLines * (isStory ? 70 : 60) + 18;
+        context.fillStyle = "#eef5ff";
+        context.font = `${isStory ? 32 : 26}px Arial, sans-serif`;
+        const subLines = drawText(context, values.subtitle || "Seu texto de apoio aparece aqui", pad, y, width - pad * 2, isStory ? 40 : 33, isStory ? 3 : 2);
+        y += subLines * (isStory ? 40 : 33) + (isStory ? 30 : 24);
+        context.strokeStyle = "#ffffff80";
+        context.lineWidth = 2;
+        context.beginPath();
+        context.moveTo(pad, y);
+        context.lineTo(width - pad, y);
+        context.stroke();
+        y += isStory ? 29 : 22;
+        context.fillStyle = "#ffffff";
+        context.font = `800 ${isStory ? 31 : 25}px Arial, sans-serif`;
+        context.fillText(values.name || "Seu nome", pad, y, width * 0.54);
+        y += isStory ? 43 : 34;
+        context.fillStyle = "#dce9ff";
+        context.font = `${isStory ? 25 : 21}px Arial, sans-serif`;
+        context.fillText(values.role || "Sua profissão", pad, y, width * 0.54);
+        const buttonText = values.cta || "Fale comigo";
+        context.font = `800 ${isStory ? 25 : 20}px Arial, sans-serif`;
+        const buttonWidth = Math.min(width * 0.42, context.measureText(buttonText).width + 54);
+        const buttonHeight = isStory ? 62 : 54;
+        const buttonY = Math.min(height - buttonHeight - pad, y - (isStory ? 6 : 1));
+        context.fillStyle = values.accent;
+        context.beginPath();
+        context.roundRect(width - pad - buttonWidth, buttonY, buttonWidth, buttonHeight, buttonHeight / 2);
+        context.fill();
+        context.fillStyle = "#ffffff";
+        context.textAlign = "center";
+        context.textBaseline = "middle";
+        context.fillText(buttonText, width - pad - buttonWidth / 2, buttonY + buttonHeight / 2);
+      }
+
+      function escapeHtml(text) {
+        return text.replace(/[&<>"']/g, (character) => ({
+          "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+        })[character]);
+      }
+
+      function exportLanding(values) {
+        const imagePath = photoSource.startsWith("data:") ? photoSource : "assets/foto-atendimento.jpg";
+        const page = `<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${escapeHtml(values.name)} | ${escapeHtml(values.role)}</title>
+<style>*{box-sizing:border-box}body{margin:0;color:#17233c;font:16px Arial,sans-serif;line-height:1.55}.wrap{max-width:1080px;margin:auto}.nav{display:flex;justify-content:space-between;align-items:center;padding:18px 6%;color:${values.primary};font-weight:bold}.button{display:inline-block;padding:12px 20px;border-radius:99px;background:${values.accent};color:white;text-decoration:none;font-weight:bold}.hero{display:grid;grid-template-columns:1fr 1fr;align-items:center;background:#f3f7fc}.copy{padding:48px 9%}.eyebrow{color:${values.accent};font-size:13px;font-weight:bold;letter-spacing:.1em;text-transform:uppercase}.hero h1{margin:12px 0;color:${values.primary};font-size:clamp(34px,5vw,58px);line-height:1.08}.hero p{color:#5c6b82}.hero img{width:100%;height:100%;min-height:380px;object-fit:cover}.services{padding:46px 6%;text-align:center}.services h2{color:${values.primary}}.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}.item{padding:20px 14px;border:1px solid #e5ecf4;border-radius:14px;background:white;color:#53647b;font-weight:bold}.contact{padding:30px 6%;background:${values.primary};color:white;text-align:center}.contact h2{margin-top:0}@media(max-width:650px){.hero{grid-template-columns:1fr}.hero img{grid-row:1;min-height:260px;max-height:360px}.copy{padding:32px 7%}.grid{grid-template-columns:1fr 1fr}}</style></head>
+<body><main class="wrap"><nav class="nav"><span>${escapeHtml(values.name)} · ${escapeHtml(values.role)}</span><a class="button" href="${contactUrl(values.phone)}" target="_blank" rel="noopener">WhatsApp</a></nav>
+<section class="hero"><div class="copy"><div class="eyebrow">Aprender · Evoluir · Conquistar</div><h1>${escapeHtml(values.title)}</h1><p>${escapeHtml(values.subtitle)}</p><a class="button" href="${contactUrl(values.phone)}" target="_blank" rel="noopener">${escapeHtml(values.cta)} · ${escapeHtml(values.phone)}</a></div><img src="${imagePath}" alt="Atendimento psicopedagógico"></section>
+<section class="services"><h2>Um caminho de descobertas e conquistas</h2><div class="grid"><div class="item">Avaliação e intervenção personalizada</div><div class="item">Estímulo às habilidades cognitivas</div><div class="item">Apoio no aprendizado escolar</div><div class="item">Autonomia e autoestima</div></div></section>
+<footer class="contact"><h2>${escapeHtml(values.name)} · ${escapeHtml(values.role)}</h2><a class="button" href="${contactUrl(values.phone)}" target="_blank" rel="noopener">${escapeHtml(values.cta)} pelo WhatsApp</a></footer></main></body></html>`;
+        const blob = new Blob([page], { type: "text/html;charset=utf-8" });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = "landing-page-alexandra.html";
+        document.body.append(link);
+        link.click();
+        link.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+        setStatus(photoSource.startsWith("data:") ? "Landing page baixada com a foto incluída." : "Landing page baixada. Mantenha a pasta assets junto ao arquivo para exibir a foto.");
+      }
+
+      async function exportPng(values) {
+        const image = new Image();
+        image.src = photoSource;
+        await new Promise((resolve, reject) => {
+          image.onload = resolve;
+          image.onerror = () => reject(new Error("Não foi possível carregar a foto escolhida."));
+          if (image.complete && image.naturalWidth) resolve();
+        });
+        const isStory = values.format === "story";
+        const canvas = document.createElement("canvas");
+        canvas.width = 1080;
+        canvas.height = isStory ? 1920 : 1080;
+        const context = canvas.getContext("2d");
+        if (!context) throw new Error("Seu navegador não conseguiu preparar a imagem.");
+        renderPost(context, image, values);
+        const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/png"));
+        if (!blob) throw new Error("Não foi possível criar o arquivo PNG.");
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = isStory ? "story-alexandra.png" : "post-alexandra.png";
+        document.body.append(link);
+        link.click();
+        link.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+      }
+
+      elements.photo.addEventListener("change", () => {
+        const file = elements.photo.files && elements.photo.files[0];
+        if (!file) return;
+        if (!file.type.startsWith("image/")) {
+          setStatus("Selecione um arquivo de imagem.", true);
+          elements.photo.value = "";
+          return;
+        }
+        const reader = new FileReader();
+        reader.onload = () => {
+          if (typeof reader.result !== "string") {
+            setStatus("Não foi possível ler essa imagem.", true);
+            return;
+          }
+          photoSource = reader.result;
+          elements.previewPhoto.src = photoSource;
+          elements.landingPhoto.src = photoSource;
+          setStatus("Foto atualizada. Ela ficará disponível enquanto esta página estiver aberta.");
+        };
+        reader.onerror = () => setStatus("Não foi possível ler essa imagem.", true);
+        reader.readAsDataURL(file);
+      });
+
+      for (const input of Object.values(elements)) {
+        if (input instanceof HTMLInputElement || input instanceof HTMLTextAreaElement || input instanceof HTMLSelectElement) {
+          input.addEventListener("input", updatePreview);
+          input.addEventListener("change", updatePreview);
+        }
+      }
+      elements.export.addEventListener("click", async () => {
+        const values = readValues();
+        try {
+          if (values.format === "landing") exportLanding(values);
+          else await exportPng(values);
+          if (values.format !== "landing") setStatus("Imagem baixada no tamanho ideal para publicação.");
+        } catch (error) {
+          setStatus(error instanceof Error ? error.message : "Não foi possível exportar o material.", true);
+        }
+      });
+      document.querySelector("#reset").addEventListener("click", () => {
+        for (const key of Object.keys(defaults)) {
+          if (elements[key]) elements[key].value = defaults[key];
+        }
+        elements.photo.value = "";
+        photoSource = "assets/foto-atendimento.jpg";
+        elements.previewPhoto.src = photoSource;
+        elements.landingPhoto.src = photoSource;
+        try {
+          localStorage.removeItem("alexandra-content-studio");
+        } catch (error) {
+          setStatus("Conteúdo restaurado, mas não foi possível limpar as configurações salvas.");
+          updatePreview();
+          return;
+        }
+        updatePreview();
+        setStatus("Conteúdo inicial restaurado.");
+      });
+
+      loadSavedValues();
+      updatePreview();
+    })();
+  </script>
 </body>
 </html>

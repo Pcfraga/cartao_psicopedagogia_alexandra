@@ -5,10 +5,13 @@ Como abrir:
 2. Abra a pasta no Visual Studio Code.
 3. Abra index.html no navegador (ou use a extensão Live Server).
 
-Como editar:
-- Textos: procure os trechos dentro de index.html.
-- Cores: altere as variáveis no bloco :root no começo do CSS.
-- Foto: substitua assets/foto-atendimento.jpg por outra foto com o mesmo nome.
-- O layout é HTML e CSS; os textos, cores e serviços são editáveis.
+Como criar conteúdo:
+- Escolha Post quadrado, Story ou Landing page no editor.
+- Edite os textos, o nome, o WhatsApp e as cores; a pré-visualização atualiza na hora.
+- Para usar outra imagem, escolha um arquivo no campo Foto do material.
+- Posts e stories são baixados como PNG, no tamanho 1080 × 1080 ou 1080 × 1920.
+- A landing page é baixada como HTML responsivo, com os textos e o link de WhatsApp.
+- As configurações de texto e cor ficam salvas no navegador. A foto escolhida vale enquanto a página estiver aberta.
+- Se a landing page usar a foto padrão, mantenha a pasta assets ao lado do HTML baixado. Uma foto escolhida no editor é incluída no HTML.
 
-O arquivo está preparado em formato quadrado para publicação no Instagram.
+O editor funciona localmente e não envia fotos ou textos para um servidor.
