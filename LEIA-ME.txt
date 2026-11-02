@@ -1,35 +1,159 @@
-CARTÃO INSTAGRAM — ALEXANDRA G. S. DE FRAGA
+ATELIÊ DA ALEXANDRA — APLICAÇÃO COMPLETA
 
-Como abrir:
-1. Extraia o ZIP para uma pasta.
-2. Abra a pasta no Visual Studio Code.
-3. Abra index.html no navegador (ou use a extensão Live Server).
+Estrutura nova
+backend\                         .NET 10 LTS Web API, EF Core e PostgreSQL
+  src\Cartao.Api\
+  tests\
+frontend\landing\                Next.js 16 e React 19: site público
+frontend\dashboard\              React 19, Vite 8, Tailwind 4, React Router e Firebase Auth
+packages\studio\                 Tipos, validação, layout público e renderização PNG compartilhados
+docker-compose.yml              PostgreSQL, API, site e painel
 
-Como criar conteúdo:
-- Escolha Post quadrado, Story ou Landing page no editor.
-- Edite os textos, o nome, o WhatsApp e as cores; a pré-visualização atualiza na hora.
-- Para usar outra imagem, escolha um arquivo no campo Foto do material.
-- A barra de salvar e baixar fica no topo da tela, mesmo ao rolar o editor.
-- Posts e stories são baixados como PNG, no tamanho 1080 × 1080 ou 1080 × 1920.
-- A landing page é baixada como HTML responsivo, com a foto incluída, os textos e o link de WhatsApp. Não é necessário copiar a pasta assets junto.
-- Salvar projeto baixa um arquivo projeto-alexandra.json com os textos, as cores, o formato e a foto. Guarde esse arquivo para editar depois.
-- Abrir projeto carrega esse arquivo JSON no editor. PNG e HTML são os materiais prontos; o JSON é a cópia editável.
-- As configurações de texto e cor ficam salvas no navegador. A foto escolhida vale enquanto a página estiver aberta.
+Escopo
+- O projeto continua sendo um criador de posts, stories e landing pages; não é um sistema de agendamentos.
+- A arquitetura segue o padrão solicitado, sem SQS: a publicação é síncrona.
+- Supabase não faz parte da nova aplicação. Os arquivos do protótipo anterior foram preservados como legado, sem uso pelos builds novos.
+- Os arquivos estáticos antigos na raiz e em projetos\ foram mantidos para preservar o histórico e os links existentes. Não são o novo painel.
+- Nenhum banco foi criado em um provedor, nenhum Firebase foi configurado automaticamente e esta migração não foi enviada para produção.
 
-Como divulgar:
-- No editor, clique em Projetos publicados. Ali você pode ver a landing, copiar o link, abrir a cópia editável ou baixar o projeto.
-- A primeira landing fica em https://pcfraga.github.io/cartao_psicopedagogia_alexandra/projetos/alexandra/
-- Compartilhe o link da landing no WhatsApp, Instagram ou onde desejar. Não envie o JSON para os clientes.
-- Os arquivos da landing e a cópia editável publicada ficam armazenados no repositório e no GitHub Pages; são públicos. Não publique informações privadas.
-- Salvar projeto e Baixar continuam sendo operações locais. Não atualizam a versão publicada.
+Requisitos
+- Node.js 24 LTS e npm.
+- SDK .NET 10. O backend\global.json indica o SDK usado nos testes.
+- PostgreSQL 17 local; Docker Desktop com Compose e opcional.
+- Projeto Firebase com Authentication > Email/Password habilitado.
+- Uma senha de banco forte e exclusiva, nunca incluída no Git.
 
-Como publicar ou atualizar pelo VS Code:
-1. Salve o projeto JSON no editor.
-2. Na pasta do projeto, execute com Node.js:
-   node scripts\publish-project.cjs "C:\caminho\projeto-alexandra.json" alexandra
-3. Faça commit e push dos arquivos alterados. O GitHub Pages publica a landing e atualiza o catálogo.
-- Use outro nome no lugar de alexandra para criar outro endereço. O mesmo nome atualiza a página existente.
-- Para abrir a cópia publicada no editor, use o site online ou Live Server (não file://).
-- A publicação direta por botão exige um serviço de armazenamento com autenticação; isso não faz parte desta versão estática.
+Configurar Firebase
+1. Crie um projeto no console Firebase e registre um aplicativo Web.
+2. Em Authentication > Sign-in method, ative Email/Password.
+3. Configure os domínios autorizados (localhost para testes e o domínio real do painel).
+4. Configure os modelos/endereços de e-mail de confirmação e recuperação no Firebase.
+5. A configuração Web do Firebase é pública. Ela não é uma credencial de administrador.
+6. Copie .env.example para .env e preencha:
+   FIREBASE_PROJECT_ID e VITE_FIREBASE_PROJECT_ID: o mesmo Project ID.
+   VITE_FIREBASE_API_KEY, VITE_FIREBASE_AUTH_DOMAIN: dados públicos do aplicativo Web.
+   POSTGRES_PASSWORD: senha do PostgreSQL, privada (somente para Docker).
+- A API valida tokens assinados pelo Firebase e exige email_verified=true. Nunca use uma chave privada de service account no frontend.
+- Após confirmar o e-mail, saia e entre novamente para obter um token atualizado.
+- As operacoes online renovam o token antes de chamar a API para reconhecer a confirmacao do e-mail. Sem confirmacao, o painel orienta reenviar o link em Minha conta em vez de enviar uma requisicao que receberia 403.
+- Para produção, revise cotas, proteção contra abuso e políticas do Firebase antes de liberar cadastros ao público.
 
-O editor não envia automaticamente fotos ou textos para um servidor. Somente arquivos incluídos no commit e enviados ao GitHub são publicados.
+Executar com Docker (a partir desta pasta)
+  docker compose up --build -d
+
+Endereços locais:
+  Painel: http://localhost:5173
+  Site público: http://localhost:3000
+  API e saúde: http://localhost:5080/health
+- O Compose só expõe portas no localhost. Não é uma configuração pronta de produção.
+- O PostgreSQL persiste no volume postgres-data. Parar os contêineres não apaga os projetos.
+- A API executa as migrations ao iniciar no Compose. Em produção, prefira aplicá-las como uma etapa controlada de release.
+- Variáveis VITE_ entram no build do painel: para alterá-las, reconstrua a imagem.
+
+Executar separadamente neste Windows (sem Docker)
+- O PostgreSQL fica em %LOCALAPPDATA%\AtelieAlexandra, com dados persistentes em data\.
+- Aceita conexoes somente locais na porta 5432; a aplicacao usa o usuario atelie, sem privilegios de superusuario.
+- As credenciais app-credential.xml e admin-credential.xml sao criptografadas pelo Windows e so podem ser abertas pelo mesmo usuario neste computador. Nunca envie esses arquivos para o Git.
+- O banco nao e um servico do Windows e nao inicia automaticamente apos reiniciar o computador.
+- Na raiz do projeto:
+  powershell -ExecutionPolicy Bypass -File .\scripts\local.ps1 start-db
+  powershell -ExecutionPolicy Bypass -File .\scripts\local.ps1 migrate
+- Em terminais separados:
+  powershell -ExecutionPolicy Bypass -File .\scripts\local.ps1 api -FirebaseProjectId SEU_PROJECT_ID
+  powershell -ExecutionPolicy Bypass -File .\scripts\local.ps1 dashboard
+  powershell -ExecutionPolicy Bypass -File .\scripts\local.ps1 landing
+- O comando api exige o ID real do Firebase; preencha tambem a configuracao Web em .env para habilitar o login no painel.
+- Ctrl+C encerra a API ou frontend do respectivo terminal. Para parar o banco:
+  powershell -ExecutionPolicy Bypass -File .\scripts\local.ps1 stop-db
+- Parar o banco nao apaga os dados. Nao remova a pasta data\. Faca backups antes de trocar de computador ou reinstalar o Windows: as senhas criptografadas nao sao portaveis.
+
+Executar os frontends manualmente sem Docker
+  npm ci
+  npm run dev:dashboard
+  npm run dev:landing
+- O Vite lê .env da raiz. A landing usa API_INTERNAL_URL no ambiente do processo; por padrão aponta para http://localhost:5080.
+- O editor e downloads locais funcionam sem conta/API configurada.
+- Para o site consultar a API no servidor Docker, API_INTERNAL_URL é http://api:8080 (configurado no Compose). Não use esse hostname nas URLs públicas do navegador.
+
+Executar a API sem Docker
+- Inicie um PostgreSQL real e configure, no ambiente do processo:
+  ConnectionStrings__Postgres=Host=localhost;Port=5432;Database=atelie;Username=atelie;Password=SUA_SENHA
+  Firebase__ProjectId=SEU_PROJECT_ID
+- A partir de backend\:
+  dotnet tool restore
+  dotnet ef database update --project src\Cartao.Api
+  dotnet run --project src\Cartao.Api --urls http://localhost:5080
+- CORS permite http://localhost:5173 por padrão. Para outro domínio, defina Cors__AllowedOrigins__0 (e índices adicionais).
+- O Next consulta a API no servidor; não exige CORS para a chamada interna.
+- Não há login falso nem bypass de autenticação quando o Firebase está sem configuração.
+
+Fluxo de trabalho
+1. Entre no painel e crie sua conta; confirme o e-mail.
+2. Edite texto, cores e foto. A prévia de post/story é o mesmo canvas usado no PNG baixado.
+3. Salvar projeto baixa um JSON com textos e foto; Abrir projeto JSON importa inclusive arquivos da versão antiga.
+4. Baixar imagem PNG gera 1080 x 1080 ou 1080 x 1920. A landing pode ser baixada como HTML independente com foto incluída.
+5. Salvar online mantém um rascunho privado no PostgreSQL, separado por conta Firebase.
+6. Defina um endereço único, confirme a autorização da foto e clique em Publicar / atualizar landing.
+7. Compartilhe http://localhost:3000/projetos/seu-endereco apenas em testes locais. Em produção, o link usa VITE_PUBLIC_SITE_URL e pode ser aberto sem login.
+8. Meus projetos lista apenas projetos da sua conta.
+9. Criar outra landing desvincula o editor do projeto anterior. A próxima gravação cria uma cópia.
+10. Salvar rascunho não altera a publicação. Publicar faz um snapshot dos textos e da foto.
+11. Retirar do ar remove a publicação, sem apagar o rascunho. Excluir projeto exige confirmação e remove ambos.
+- Edições concorrentes são rejeitadas com conflito; reabra o projeto para carregar a revisão mais recente.
+- Fotos são normalizadas para PNG de até 1920 px e 5 MB. No banco, são armazenadas junto ao projeto/snapshot.
+- Para simplificar esta primeira migração, a lista retorna fotos inline e pode ficar grande; não há paginação ou armazenamento externo de mídia ainda.
+- O editor guarda textos localmente no navegador e a foto somente ao salvar um projeto. Saia e feche o editor em computadores compartilhados.
+
+Migrar os projetos já salvos
+- Abra seu projeto-alexandra.json antigo no novo painel, entre na sua conta e clique em Salvar online.
+- Publique com o endereço desejado.
+- O catálogo estático antigo não é importado automaticamente para contas do Firebase.
+- Não há conversão automática de usuários ou dados do protótipo Supabase. Se houver dados reais ali, exporte-os antes de desligar o serviço.
+
+Publicar na internet
+- O render.yaml cadastra API Docker Free, site Next Docker Free e painel estatico. O build Docker e feito no Render, sem precisar instalar Docker neste computador.
+- Use Render > New + > Blueprint e selecione o repositorio com esta versao. Confirme que ambos os Web Services estao no plano Free e que nao ha banco Render pago sendo criado.
+- Nunca coloque a senha Neon no render.yaml. Na variavel privada ConnectionStrings__Postgres da API, use o formato Npgsql (nao a URL postgresql://):
+  Host=HOST_DO_NEON;Port=5432;Database=neondb;Username=neondb_owner;Password=SENHA_DO_NEON;SSL Mode=Require;Channel Binding=Require
+- Preserve o host exato mostrado no Neon. Para migrations, prefira a conexao direta (desative Connection pooling em Connect); mantenha TLS habilitado.
+- Firebase__ProjectId na API e VITE_FIREBASE_PROJECT_ID no painel: ID real do mesmo projeto Firebase.
+- Apos o Render atribuir as URLs HTTPS reais, ajuste as variaveis (nao suponha que os nomes estejam disponiveis):
+  API: Cors__AllowedOrigins__0 = URL HTTPS do painel, sem barra final.
+  Site Next: API_INTERNAL_URL = URL HTTPS da API.
+  Painel: VITE_API_URL = URL HTTPS da API; VITE_PUBLIC_SITE_URL = URL HTTPS do site Next.
+  Painel: VITE_FIREBASE_API_KEY e VITE_FIREBASE_AUTH_DOMAIN = configuracao Web do Firebase.
+- As URLs devem ser completas com https://. Nao use localhost em producao. Reconstrua o painel apos mudar variaveis VITE_.
+- No Firebase > Authentication > Settings > Authorized domains, adicione o hostname do painel Render (sem https://).
+- A API aplica migrations ao iniciar nesta configuracao inicial. Os projetos do banco local nao sao copiados: importe seus JSONs no painel online e salve/publice novamente.
+- Confirme /health da API com Healthy, crie/acesse uma conta com e-mail verificado, salve e publique; teste a URL /projetos/slug em outro dispositivo sem login.
+- Os servicos Free dormem apos inatividade, compartilham as 750 horas mensais e podem demorar cerca de um minuto para despertar. As chamadas a API aguardam ate 90 segundos; isso nao evita cotas, indisponibilidade ou outros limites do provedor.
+- O PostgreSQL Neon Free tem cotas de armazenamento/compute; fotos inline consomem espaco. Mantenha backups e monitore o consumo. Nao use o PostgreSQL Render Free como armazenamento permanente: expira apos 30 dias.
+- GitHub Pages não executa esta API nem o servidor Next.js. O simples push não coloca a aplicação nova no ar.
+- Hospede API e Next em um serviço com suporte a .NET/Node ou contêineres e use PostgreSQL gerenciado ou persistente.
+- O painel Vite pode ser servido estaticamente por Nginx (Dockerfile incluído).
+- Configure HTTPS, domínios públicos e backups. Atualize VITE_API_URL, VITE_PUBLIC_SITE_URL, API_INTERNAL_URL, os domínios Firebase e CORS.
+- Não exponha PostgreSQL publicamente nem disponibilize .env.
+- As landings Next são renderizadas no servidor, com título/descrição individuais e resposta 404 para páginas retiradas. Não é necessário JavaScript no cliente para ler o conteúdo.
+- O caminho público é /projetos/endereco. Links GitHub Pages antigos continuam sendo da versão estática, não apontam automaticamente ao servidor novo.
+- SQS não foi incluído. Não há painel de administrador para ver projetos privados de outros usuários.
+
+Validação
+  npm test
+  npm run typecheck
+  npm run build
+  cd backend
+  dotnet build
+  dotnet test
+  dotnet ef migrations has-pending-model-changes --project src\Cartao.Api
+- Testes do backend usam SQLite em memória e tokens de teste assinados: não substituem a validação contra PostgreSQL e Firebase reais.
+- O site público foi testado contra um servidor local com respostas de API simuladas.
+- Compose ainda precisa ser validado em um ambiente com Docker.
+- Neste Windows, PostgreSQL 17.11 foi instalado sem administrador; a migration InitialCreate foi aplicada e as tabelas projects/published_pages foram verificadas com o usuario restrito atelie.
+- Painel e site publico responderam HTTP 200 em processos separados. A API ainda depende da criacao/configuracao real do Firebase; nao foi iniciada com autenticacao simulada.
+- Antes da produção, valide duas contas Firebase reais, confirmação/recuperação de e-mail, isolamento, fotos, snapshot público, atualização, exclusão e retirada do ar.
+- O SDK .NET 10 usado na validação foi instalado no perfil do usuário pelo instalador oficial.
+
+Legado
+- index.html, landing.html, online*.js, src\online*, supabase\, CONFIGURAR-ONLINE.txt e os testes online antigos são o protótipo anterior, não a configuração da aplicação nova.
+- Não execute o SQL Supabase para instalar a API .NET. A instalação nova usa EF migrations.
+- scripts\publish-project.cjs e projetos\ mantêm o fluxo estático antigo, separado dos novos projetos no PostgreSQL.

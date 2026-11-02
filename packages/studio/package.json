@@ -1,0 +1,13 @@
+{
+  "name": "@atelie/studio",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "exports": {
+    ".": "./src/model.ts",
+    "./canvas": "./src/canvas.ts",
+    "./landing": "./src/LandingContent.tsx",
+    "./landing.css": "./src/landing.css"
+  },
+  "peerDependencies": { "react": "^19.3.1" }
+}

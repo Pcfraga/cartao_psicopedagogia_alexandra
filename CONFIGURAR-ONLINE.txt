@@ -1,0 +1,81 @@
+PUBLICAÇÃO ONLINE — SUPABASE
+
+Estado inicial
+- O editor local e as páginas já publicadas continuam funcionando.
+- Login, salvamento online e publicação por botão só funcionam depois da configuração abaixo.
+- Não há um Supabase criado automaticamente: é necessária uma conta e um projeto do proprietário.
+
+1. Criar o projeto
+- Acesse https://supabase.com/dashboard e crie um projeto.
+- Escolha a região adequada e uma senha de banco forte. Nunca coloque essa senha no código.
+- O plano gratuito tem cotas de banco, armazenamento, tráfego e envio de e-mails; confira os limites atuais no painel. Projetos gratuitos podem ser pausados.
+
+2. Criar tabelas e permissões
+- No SQL Editor do novo projeto, execute supabase\setup.sql integralmente, uma única vez.
+- Ele cria studio_projects (rascunhos privados por conta), studio_pages (somente versões públicas) e dois buckets de fotos.
+- studio-private é privado. studio-public é público e contém apenas fotos preparadas para publicação.
+- Não desative o Row Level Security e não dê permissão pública de escrita nas tabelas ou buckets.
+- O SQL é uma instalação inicial, não uma migração repetível. Se a execução falhar, corrija a causa antes de prosseguir; não rode comandos isolados para contornar as permissões.
+
+3. Configurar login
+- Authentication > Providers: habilite Email e confirmação de e-mail.
+- Configure senha mínima de 8 caracteres ou mais.
+- Authentication > URL Configuration:
+  Site URL: https://pcfraga.github.io/cartao_psicopedagogia_alexandra/index.html
+  Redirect URLs: inclua esse mesmo endereço.
+- Para testes com Live Server, inclua também o endereço exato de index.html no localhost usado por você. file:// não serve para autenticação.
+- Configure um provedor SMTP antes de convidar outros usuários. O serviço de e-mail de testes do Supabase tem limites e pode restringir destinatários.
+- Para cadastro público, ative proteção contra abuso e os limites de autenticação oferecidos no painel. Esta versão não integra um widget CAPTCHA; se exigir CAPTCHA, será necessário integrar o widget antes de liberar cadastros.
+- Os usuários podem criar conta, confirmar o e-mail, entrar e recuperar a senha. Cada um administra apenas seus projetos.
+
+4. Informar apenas os dados públicos
+- No painel do Supabase, copie a Project URL e a Publishable key (começa com sb_publishable_).
+- Preencha online-config.js:
+  window.ALEXANDRA_ONLINE = {
+    supabaseUrl: "https://SEU-PROJETO.supabase.co",
+    publishableKey: "sb_publishable_SUA_CHAVE_PUBLICA"
+  };
+- A chave publishable é pública por definição. A proteção dos dados depende das políticas SQL.
+- Nunca use sb_secret_, service_role, senha do banco ou credenciais de administrador no navegador ou no repositório.
+
+5. Publicar a configuração uma vez
+- Depois de alterar os arquivos de código: npm ci e npm test, depois npm run build.
+- Faça commit e push dos arquivos, incluindo online.js (bundle compilado) e online-config.js.
+- node_modules não deve ir para o GitHub. O bundle é incluído porque o GitHub Pages serve os arquivos sem executar npm.
+- Se alterar apenas online-config.js, não é necessário recompilar online.js.
+- Aguarde o deploy e atualize o navegador.
+
+6. Usar sem VS Code
+- No editor online, abra Minha conta e publicação online.
+- Crie uma conta e confirme o e-mail, ou entre na sua conta existente.
+- Edite o material e clique em Salvar rascunho online.
+- Escolha um nome globalmente único para o link, confirme que pode divulgar textos e foto e clique em Publicar / atualizar landing.
+- Copie o link gerado, no formato:
+  https://pcfraga.github.io/cartao_psicopedagogia_alexandra/landing.html?pagina=apoio-escolar-alexandra
+- Esse link pode ser aberto sem login. As publicações por Supabase não exigem commit, push ou aguardar um deploy.
+- A lista Meus projetos online fica dentro da conta. O catálogo antigo Projetos publicados continua listando somente páginas estáticas publicadas pelo GitHub.
+- Para outra landing, use Criar outra landing a partir desta. Isso cria uma cópia no próximo salvamento, sem alterar o projeto anterior.
+- Salvar rascunho não muda a página pública. Publicar atualiza o snapshot público no mesmo endereço.
+- Retirar do ar remove a publicação, mantendo o rascunho privado.
+- Excluir projeto exige confirmação e remove o rascunho e sua publicação.
+- A foto PNG precisa ter até 5 MB. Se ultrapassar esse tamanho, reduza a imagem e tente novamente.
+
+7. Verificação obrigatória antes de liberar para outras pessoas
+- Entre com a conta A: salve e publique um projeto.
+- Abra o link em uma janela anônima: a landing deve abrir, sem editor ou login.
+- Entre com a conta B: a lista não pode mostrar os rascunhos de A.
+- Altere e salve o rascunho de A: a landing pública deve continuar igual até clicar em Publicar.
+- Retire a página do ar: novos acessos devem informar que a página não existe ou foi retirada.
+- Teste confirmação de e-mail, recuperação de senha e saída da conta usando o SMTP configurado.
+- Os testes locais validam o SQL em PostgreSQL embutido e os fluxos do aplicativo com respostas simuladas. Só esta validação com o projeto real confirma Auth, Storage, e-mail, políticas e permissões no seu ambiente Supabase.
+
+Limites e privacidade
+- Textos e fotos publicados são públicos. Publique somente conteúdo que você tem autorização para divulgar.
+- Rascunhos no Supabase são protegidos por conta. Não há painel de administrador para ver projetos de outros usuários.
+- A sessão é mantida pelo SDK oficial no navegador. Saia da conta em computadores compartilhados. O conteúdo já aberto no editor e os backups locais não são apagados ao sair.
+- O serviço não salva senhas no código do aplicativo. A autenticação fica no Supabase.
+- Retirar uma página do ar não revoga cópias ou caches feitos por terceiros. Fotos públicas podem permanecer em cache por algum tempo.
+- Se uma falha interromper upload e gravação, pode restar uma foto órfã. Erros de limpeza são exibidos; monitore os buckets e as cotas do serviço.
+- Mudar o nome do link substitui o endereço anterior. Não há redirecionamento automático.
+- O visualizador depende de JavaScript. Não há geração de HTML estático ou prévia Open Graph individual para cada publicação online.
+- A conta do Supabase, custos e backups são administrados pelo proprietário do serviço; não há cobrança por usuário implementada.

@@ -1,0 +1,23 @@
+.public-landing { --primary: #123d75; --accent: #e83d83; max-width: 1440px; margin: auto; color: #17233c; background: white; font: 18px/1.6 "Segoe UI", Arial, sans-serif; }
+.public-landing * { box-sizing: border-box; }
+.landing-nav { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px; padding: 20px 6%; color: var(--primary); }
+.landing-button { display: inline-block; padding: 12px 20px; border-radius: 99px; background: var(--accent); color: white; text-decoration: none; font-weight: 750; }
+.landing-hero { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: center; background: #f3f7fc; }
+.landing-copy { padding: 48px 9%; }
+.landing-eyebrow { color: var(--accent); font-size: 15px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+.public-landing h1 { margin: 12px 0; color: var(--primary); font-size: clamp(32px, 5vw, 64px); line-height: 1.1; overflow-wrap: anywhere; }
+.landing-hero img { width: 100%; height: 100%; min-height: 380px; object-fit: cover; }
+.landing-services { padding: 46px 6%; text-align: center; }
+.landing-services h2 { color: var(--primary); }
+.landing-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
+.landing-grid > div { padding: 20px 14px; border: 1px solid #dfe5ee; border-radius: 14px; color: #53647b; font-weight: 700; }
+.landing-contact { padding: 30px 6%; color: white; background: var(--primary); text-align: center; }
+.landing-contact h2 { margin-top: 0; overflow-wrap: anywhere; }
+.public-landing a:focus-visible { outline: 3px solid #f5b62e; outline-offset: 3px; }
+@media (max-width: 650px) {
+  .landing-hero { grid-template-columns: 1fr; }
+  .landing-hero img { grid-row: 1; min-height: 260px; max-height: 360px; }
+  .landing-copy { padding: 32px 7%; }
+  .landing-grid { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 360px) { .landing-grid { grid-template-columns: 1fr; } }

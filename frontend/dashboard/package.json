@@ -1,0 +1,23 @@
+{
+  "name": "@atelie/dashboard",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": { "dev": "vite --host 0.0.0.0", "build": "tsc --noEmit && vite build", "typecheck": "tsc --noEmit", "preview": "vite preview --host 0.0.0.0" },
+  "dependencies": {
+    "@atelie/studio": "1.0.0",
+    "@firebase/app": "^0.16.4",
+    "@firebase/auth": "^1.13.8",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "react-router-dom": "^7.18.5"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.3.3",
+    "@types/react": "^19.2.0",
+    "@types/react-dom": "^19.2.0",
+    "@vitejs/plugin-react": "^6.0.0",
+    "tailwindcss": "^4.3.3",
+    "vite": "^8.3.5"
+  }
+}

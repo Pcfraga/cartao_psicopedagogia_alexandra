@@ -1,0 +1,12 @@
+**/node_modules
+**/bin
+**/obj
+**/dist
+**/.next
+.git
+.env
+.env.*
+legacy
+supabase
+src
+projetos

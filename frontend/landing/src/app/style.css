@@ -1,0 +1,4 @@
+body { margin: 0; background: #fff; color: #17233c; font: 18px/1.6 "Segoe UI", Arial, sans-serif; }
+.message { max-width: 760px; padding: 48px 24px; margin: auto; }
+.message button { padding: 12px 20px; color: white; background: #145da5; border: 0; border-radius: 10px; font: inherit; cursor: pointer; }
+.message a { color: #145da5; }

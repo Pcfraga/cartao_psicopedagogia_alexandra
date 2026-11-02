@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Cartao.Api/Cartao.Api.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Cartao.Api.Tests/Cartao.Api.Tests.csproj" />
+  </Folder>
+</Solution>
