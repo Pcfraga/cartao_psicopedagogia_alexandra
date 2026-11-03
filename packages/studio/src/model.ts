@@ -1,3 +1,5 @@
+import { parseDesign, parseLanding, type Design, type LandingDesign } from "./design.ts";
+export * from "./design.ts";
 export type Format = "square" | "story" | "landing";
 export interface ProjectValues {
   format: Format;
@@ -9,10 +11,12 @@ export interface ProjectValues {
   phone: string;
   primary: string;
   accent: string;
+  design?: Design;
+  landing?: LandingDesign;
 }
 export interface ProjectFile {
   app: "alexandra-content-studio";
-  version: 1;
+  version: 1 | 2;
   values: ProjectValues;
   photo: string;
 }
@@ -53,17 +57,19 @@ export function parseValues(value: unknown): ProjectValues {
   return {
     format: value.format as Format, primary: value.primary, accent: value.accent,
     title: String(value.title), subtitle: String(value.subtitle), name: String(value.name),
-    role: String(value.role), cta: String(value.cta), phone: String(value.phone)
+    role: String(value.role), cta: String(value.cta), phone: String(value.phone),
+    ...(value.design != null ? { design: parseDesign(value.design) } : {}),
+    ...(value.landing != null ? { landing: parseLanding(value.landing) } : {})
   };
 }
 export function parseProjectFile(raw: unknown): ProjectFile {
-  if (!isRecord(raw) || raw.app !== "alexandra-content-studio" || raw.version !== 1 ||
+  if (!isRecord(raw) || raw.app !== "alexandra-content-studio" || (raw.version !== 1 && raw.version !== 2) ||
       typeof raw.photo !== "string") throw new Error("Escolha um projeto JSON salvo pelo editor.");
   const photo = raw.photo;
   if (photo.length > 7_000_000 || !/^data:image\/png;base64,iVBORw0KGgo[A-Za-z0-9+/=\r\n]+$/.test(photo)) {
     throw new Error("O projeto deve conter uma foto PNG de até 5 MB.");
   }
-  return { app: "alexandra-content-studio", version: 1, values: parseValues(raw.values), photo };
+  return { app: "alexandra-content-studio", version: raw.version, values: parseValues(raw.values), photo };
 }
 export function validateSlug(slug: string): void {
   if (!/^[a-z0-9][a-z0-9-]{1,58}[a-z0-9]$/.test(slug)) {

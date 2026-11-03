@@ -1,4 +1,93 @@
 import type { ProjectValues } from "./model";
+import { element, type Design, type DesignElement } from "./design.ts";
+
+export function createTemplate(values: ProjectValues, style: "editorial" | "bold" | "minimal" = "editorial"): Design {
+  const h = values.format === "story" ? 1920 : 1080;
+  const minimal = style === "minimal";
+  const base = h - 610;
+  return { version: 1, height: h, background: minimal ? "#fffaf3" : values.primary, elements: [
+    element("image", { name: "Foto de capa", x: minimal ? 70 : 0, y: minimal ? 70 : 0, width: minimal ? 940 : 1080,
+      height: minimal ? base - 70 : h, radius: minimal ? 40 : 0 }),
+    ...(!minimal ? [element("shape", { name: "Fundo do texto", x: 0, y: base - 100, width: 1080, height: 710,
+      background: values.primary, radius: 0, opacity: .94 })] : []),
+    element("text", { name: "Título", text: values.title, x: 70, y: base - 40, width: 940, height: 200,
+      fontFamily: style === "editorial" ? "Georgia" : "Arial", fontSize: style === "bold" ? 76 : 64,
+      color: minimal ? values.primary : "#ffffff" }),
+    element("text", { name: "Descrição", text: values.subtitle, x: 70, y: base + 165, width: 940, height: 115,
+      fontSize: 32, bold: false, color: minimal ? values.primary : "#ffffff" }),
+    element("text", { name: "Assinatura", text: `${values.name}\n${values.role}`, x: 70, y: h - 295, width: 940, height: 95,
+      fontSize: 30, bold: false, color: minimal ? values.primary : "#ffffff" }),
+    element("shape", { name: "Destaque do contato", x: 70, y: h - 190, width: 940, height: 105,
+      background: values.accent, radius: 52 }),
+    element("text", { name: "Contato", text: `${values.cta} · ${values.phone}`, x: 90, y: h - 170,
+      width: 900, height: 65, fontSize: 36, color: "#ffffff", align: "center" })
+  ] };
+}
+
+function wrappedText(context: CanvasRenderingContext2D, item: DesignElement) {
+  context.font = `${item.italic ? "italic " : ""}${item.bold ? "700" : "400"} ${item.fontSize}px "${item.fontFamily}"`;
+  context.fillStyle = item.color;
+  context.textBaseline = "top";
+  context.textAlign = item.align;
+  const x = item.align === "center" ? item.width / 2 : item.align === "right" ? item.width : 0;
+  let y = 0;
+  for (const paragraph of item.text.split("\n")) {
+    let line = "";
+    for (const word of paragraph.split(/\s+/).filter(Boolean)) {
+      if (line && context.measureText(`${line} ${word}`).width > item.width) {
+        context.fillText(line, x, y); line = ""; y += item.fontSize * 1.22;
+      }
+      if (context.measureText(word).width > item.width) {
+        for (const character of Array.from(word)) {
+          if (line && context.measureText(line + character).width > item.width) {
+            context.fillText(line, x, y); line = ""; y += item.fontSize * 1.22;
+          }
+          line += character;
+        }
+      } else line = line ? `${line} ${word}` : word;
+    }
+    context.fillText(line, x, y); y += item.fontSize * 1.22;
+  }
+}
+const imageCache = new Map<string, HTMLImageElement>();
+async function cachedPhoto(source: string) {
+  const existing = imageCache.get(source);
+  if (existing) return existing;
+  const image = await loadPhoto(source);
+  if (imageCache.size >= 45) imageCache.delete(imageCache.keys().next().value!);
+  imageCache.set(source, image);
+  return image;
+}
+export async function renderDesign(canvas: HTMLCanvasElement, design: Design, source: string, story: boolean): Promise<void> {
+  const images = await Promise.all(design.elements.map(e => e.type === "image" ? cachedPhoto(e.src === "photo" ? source : e.src) : null));
+  canvas.width = 1080; canvas.height = story ? 1920 : 1080;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) throw new Error("Seu navegador não suporta a criação de imagens.");
+  ctx.fillStyle = design.background; ctx.fillRect(0, 0, canvas.width, canvas.height);
+  design.elements.forEach((e, index) => {
+    ctx.save();
+    ctx.globalAlpha = e.opacity;
+    ctx.translate(e.x + e.width / 2, e.y + e.height / 2);
+    ctx.rotate(e.rotation * Math.PI / 180);
+    ctx.translate(-e.width / 2, -e.height / 2);
+    ctx.beginPath();
+    if (e.type === "shape" && e.shape === "ellipse") ctx.ellipse(e.width / 2, e.height / 2, e.width / 2, e.height / 2, 0, 0, Math.PI * 2);
+    else ctx.roundRect(0, 0, e.width, e.height, Math.min(e.radius, e.width / 2, e.height / 2));
+    if (e.type === "shape") { ctx.fillStyle = e.background; ctx.fill(); }
+    else {
+      ctx.clip();
+      if (e.type === "text") wrappedText(ctx, e);
+      else {
+        const image = images[index]!;
+        const scale = Math.max(e.width / image.naturalWidth, e.height / image.naturalHeight) * e.zoom;
+        const w = image.naturalWidth * scale, h = image.naturalHeight * scale;
+        ctx.filter = `brightness(${e.brightness}%) contrast(${e.contrast}%) saturate(${e.saturation}%)`;
+        ctx.drawImage(image, (e.width - w) * e.panX / 100, (e.height - h) * e.panY / 100, w, h);
+      }
+    }
+    ctx.restore();
+  });
+}
 
 export async function loadPhoto(source: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
@@ -49,6 +138,7 @@ function text(context: CanvasRenderingContext2D, value: string, x: number, y: nu
   return visible.length * height;
 }
 export async function renderPost(canvas: HTMLCanvasElement, values: ProjectValues, source: string): Promise<void> {
+  if (values.design) return renderDesign(canvas, values.design, source, values.format === "story");
   const image = await loadPhoto(source);
   const story = values.format === "story";
   canvas.width = 1080;

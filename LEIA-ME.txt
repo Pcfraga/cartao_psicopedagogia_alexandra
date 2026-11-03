@@ -88,6 +88,25 @@ Executar a API sem Docker
 - Não há login falso nem bypass de autenticação quando o Firebase está sem configuração.
 
 Fluxo de trabalho
+EDITOR VISUAL
+- Posts e Stories: escolha Editorial, Impacto ou Essencial, ou comece em branco.
+- Projetos antigos mantem o layout original ate escolher um modelo ou adicionar uma camada.
+- Camadas: varias fotos, textos, retangulos e elipses; selecao, arraste, redimensionamento pelo canto e posicoes numericas.
+- Propriedades: tamanho, rotacao, opacidade, ordem, bloqueio, duplicacao, fontes, alinhamento e cores.
+- Fotos: enquadramento com zoom e deslocamento, cantos arredondados, brilho, contraste, saturacao e filtros basicos. Nao usa IA.
+- Textos longos sao limitados pela caixa: aumente a altura para mostrar mais linhas.
+- Desfazer/refazer guarda ate 30 estados da composicao durante a sessao; atalhos Ctrl+Z, Ctrl+Shift+Z e Ctrl+D.
+- As setas movem a camada selecionada em 1 px; Shift+seta move em 10 px.
+- Landing pages: modelo responsivo com blocos de capa, apresentacao, servicos, foto e contato; personalize e reordene em Blocos.
+- O botao de contato usa o WhatsApp definido em Conteudo. A previa de landing oferece Desktop e Celular.
+- O editor preserva o trabalho ao alternar entre Editor, Meus projetos e Minha conta. Abrir outro projeto substitui o atual.
+- Antes de fechar ou recarregar, salve online ou baixe o projeto JSON. Fotos e camadas nao sao salvas automaticamente no navegador.
+- Limites: 40 camadas, 16 blocos, 12 servicos por bloco; PNG de ate 5 MB por foto e projeto JSON de ate 7,5 MB no total.
+- JSON v1 continua abrindo; composicoes e blocos novos usam JSON v2 e exigem esta versao do editor para reabrir sem perdas.
+- Exportacao PNG usa o mesmo renderizador da previa, sem bordas de selecao. HTML baixado inclui as fotos e os blocos.
+- Camadas e blocos sao armazenados em values.design e values.landing (JSONB), junto ao rascunho e ao snapshot publicado. Nao exige migration de tabela.
+- Para publicar esta atualizacao, implante primeiro a API e depois painel e landing. A API antiga rejeita os novos campos.
+
 1. Entre no painel e crie sua conta; confirme o e-mail.
 2. Edite texto, cores e foto. A prévia de post/story é o mesmo canvas usado no PNG baixado.
 3. Salvar projeto baixa um JSON com textos e foto; Abrir projeto JSON importa inclusive arquivos da versão antiga.
