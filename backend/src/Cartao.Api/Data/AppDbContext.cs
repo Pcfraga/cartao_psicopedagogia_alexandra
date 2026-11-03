@@ -1,11 +1,14 @@
 ﻿using System.Text.Json;
+using System.Text.Json.Serialization;
 using Microsoft.EntityFrameworkCore;
 
 namespace Cartao.Api.Data;
 
 public sealed record ProjectValues(
     string Format, string Title, string Subtitle, string Name, string Role,
-    string Cta, string Phone, string Primary, string Accent);
+    string Cta, string Phone, string Primary, string Accent,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] JsonElement? Design = null,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] JsonElement? Landing = null);
 
 public sealed class Project
 {

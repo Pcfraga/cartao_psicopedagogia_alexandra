@@ -40,6 +40,14 @@ public static partial class Validation
         var map = new Dictionary<string, string>();
         foreach (var property in element.EnumerateObject())
         {
+            if (property.Name is "design" or "landing")
+            {
+                if (element.EnumerateObject().Count(p => p.Name == property.Name) > 1)
+                    errors[$"values.{property.Name}"] = ["Duplicated field."];
+                else if (property.Value.ValueKind != JsonValueKind.Null && !ValidateStudio(property.Value, property.Name == "design"))
+                    errors[$"values.{property.Name}"] = ["Invalid composition or page blocks."];
+                continue;
+            }
             if (!allowed.Contains(property.Name) || map.ContainsKey(property.Name))
             {
                 errors[$"values.{property.Name}"] = ["Unknown or duplicated field."];
@@ -74,7 +82,68 @@ public static partial class Validation
 
         if (errors.Keys.Any(k => k.StartsWith("values", StringComparison.Ordinal))) return null;
         return new ProjectValues(map["format"], map["title"], map["subtitle"], map["name"], map["role"],
-            map["cta"], map["phone"], map["primary"], map["accent"]);
+            map["cta"], map["phone"], map["primary"], map["accent"],
+            element.TryGetProperty("design", out var design) && design.ValueKind != JsonValueKind.Null ? design.Clone() : null,
+            element.TryGetProperty("landing", out var landing) && landing.ValueKind != JsonValueKind.Null ? landing.Clone() : null);
+    }
+
+    private static bool Text(JsonElement obj, string key, int max) =>
+        obj.TryGetProperty(key, out var value) && value.ValueKind == JsonValueKind.String &&
+        value.GetString() is { } text && text.Length <= max && !text.Contains('\0');
+
+    private static bool Number(JsonElement obj, string key, double min, double max) =>
+        obj.TryGetProperty(key, out var value) && value.ValueKind == JsonValueKind.Number &&
+        value.TryGetDouble(out var number) && double.IsFinite(number) && number >= min && number <= max;
+
+    private static bool Choice(JsonElement obj, string key, params string[] choices) =>
+        obj.TryGetProperty(key, out var value) && value.ValueKind == JsonValueKind.String && choices.Contains(value.GetString());
+
+    private static bool Color(JsonElement obj, string key) =>
+        obj.TryGetProperty(key, out var value) && value.ValueKind == JsonValueKind.String && HexColor().IsMatch(value.GetString()!);
+
+    private static bool Boolean(JsonElement obj, string key) =>
+        obj.TryGetProperty(key, out var value) && value.ValueKind is JsonValueKind.True or JsonValueKind.False;
+
+    private static bool Image(JsonElement obj, string key) =>
+        obj.TryGetProperty(key, out var value) && value.ValueKind == JsonValueKind.String &&
+        (value.GetString() == "photo" || DecodePng(value.GetString()) is not null);
+
+    private static bool ValidateStudio(JsonElement root, bool design)
+    {
+        if (root.ValueKind != JsonValueKind.Object || !Number(root, "version", 1, 1) ||
+            !root.TryGetProperty(design ? "elements" : "blocks", out var list) || list.ValueKind != JsonValueKind.Array ||
+            list.GetArrayLength() > (design ? 40 : 16) || (!design && list.GetArrayLength() == 0) ||
+            (design && (!Color(root, "background") || (!Number(root, "height", 1080, 1080) && !Number(root, "height", 1920, 1920))))) return false;
+        var ids = new HashSet<string>();
+        foreach (var item in list.EnumerateArray())
+        {
+            if (item.ValueKind != JsonValueKind.Object || !Text(item, "id", 80) ||
+                string.IsNullOrEmpty(item.GetProperty("id").GetString()) || !ids.Add(item.GetProperty("id").GetString()!)) return false;
+            if (design)
+            {
+                if (!Choice(item, "type", "text", "image", "shape") || !Text(item, "name", 80) || !Text(item, "text", 2000) ||
+                    !Number(item, "x", -2160, 2160) || !Number(item, "y", -3840, 3840) ||
+                    !Number(item, "width", 20, 2160) || !Number(item, "height", 20, 3840) ||
+                    !Number(item, "rotation", -360, 360) || !Number(item, "opacity", 0, 1) ||
+                    !Number(item, "fontSize", 10, 240) || !Number(item, "radius", 0, 1080) ||
+                    !Number(item, "zoom", 1, 4) || !Number(item, "panX", 0, 100) || !Number(item, "panY", 0, 100) ||
+                    !Number(item, "brightness", 0, 200) || !Number(item, "contrast", 0, 200) || !Number(item, "saturation", 0, 200) ||
+                    !Boolean(item, "locked") || !Boolean(item, "bold") || !Boolean(item, "italic") ||
+                    !Choice(item, "fontFamily", "Arial", "Georgia", "Trebuchet MS", "Verdana", "Courier New") ||
+                    !Choice(item, "align", "left", "center", "right") || !Choice(item, "shape", "rectangle", "ellipse") ||
+                    !Color(item, "color") || !Color(item, "background") || !Image(item, "src")) return false;
+            }
+            else
+            {
+                if (!Choice(item, "type", "hero", "text", "services", "gallery", "contact") ||
+                    !Text(item, "title", 160) || !Text(item, "body", 3000) || !Color(item, "background") ||
+                    !Choice(item, "align", "left", "center") || !Image(item, "image") ||
+                    !item.TryGetProperty("items", out var items) || items.ValueKind != JsonValueKind.Array ||
+                    items.GetArrayLength() > 12 || items.EnumerateArray().Any(v =>
+                        v.ValueKind != JsonValueKind.String || v.GetString()!.Length > 240 || v.GetString()!.Contains('\0'))) return false;
+            }
+        }
+        return true;
     }
 
     public static byte[]? ParsePhoto(string? dataUrl, IDictionary<string, string[]> errors)

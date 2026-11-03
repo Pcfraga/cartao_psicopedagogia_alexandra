@@ -202,6 +202,79 @@ public sealed class ProjectsApiTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task Layered_projects_and_page_blocks_survive_save_update_and_publication()
+    {
+        var client = _factory.ClientFor("designer");
+        var values = Values();
+        values["design"] = StudioDesign();
+        values["landing"] = JsonNode.Parse("""
+            {"version":1,"blocks":[{"id":"hero","type":"hero","title":"Capa personalizada","body":"Apresentação",
+            "items":["Apoio escolar"],"image":"photo","background":"#ffffff","align":"left"}]}
+            """);
+        var created = await client.PostAsJsonAsync("/api/projects", Save(values, 0));
+        Assert.Equal(HttpStatusCode.Created, created.StatusCode);
+        var data = await Json(created);
+        var id = data.GetProperty("id").GetString();
+        var read = await Json(await client.GetAsync($"/api/projects/{id}"));
+        Assert.Equal(3, read.GetProperty("values").GetProperty("design").GetProperty("elements").GetArrayLength());
+        Assert.Equal("Capa personalizada", read.GetProperty("values").GetProperty("landing").GetProperty("blocks")[0].GetProperty("title").GetString());
+        Assert.Equal(HttpStatusCode.OK, (await client.PostAsJsonAsync($"/api/projects/{id}/publish", new { slug = "editor-visual", revision = 1 })).StatusCode);
+        values["design"]!["elements"]![0]!["text"] = "Novo texto";
+        Assert.Equal(HttpStatusCode.OK, (await client.PutAsJsonAsync($"/api/projects/{id}", Save(values, 1))).StatusCode);
+        var page = await Json(await _factory.ClientFor(null).GetAsync("/api/pages/editor-visual"));
+        Assert.Equal("Texto", page.GetProperty("values").GetProperty("design").GetProperty("elements")[0].GetProperty("text").GetString());
+        Assert.Equal(HttpStatusCode.OK, (await client.PostAsJsonAsync($"/api/projects/{id}/publish", new { slug = "editor-visual", revision = 2 })).StatusCode);
+        page = await Json(await _factory.ClientFor(null).GetAsync("/api/pages/editor-visual"));
+        Assert.Equal("Novo texto", page.GetProperty("values").GetProperty("design").GetProperty("elements")[0].GetProperty("text").GetString());
+    }
+
+    private static JsonObject StudioDesign()
+    {
+        var layers = new JsonArray();
+        foreach (var type in new[] { "text", "image", "shape" })
+            layers.Add(new JsonObject
+            {
+                ["id"] = type, ["type"] = type, ["name"] = type, ["x"] = 100, ["y"] = 100,
+                ["width"] = 600, ["height"] = 300, ["rotation"] = 25, ["opacity"] = .8,
+                ["locked"] = false, ["text"] = "Texto", ["fontSize"] = 64, ["fontFamily"] = "Arial",
+                ["bold"] = true, ["italic"] = false, ["align"] = "left", ["color"] = "#123d75",
+                ["background"] = "#e83d83", ["radius"] = 20, ["shape"] = "rectangle",
+                ["src"] = type == "image" ? TestPng.DataUrl() : "photo", ["zoom"] = 1,
+                ["panX"] = 50, ["panY"] = 50, ["brightness"] = 100, ["contrast"] = 100, ["saturation"] = 100
+            });
+        return new JsonObject { ["version"] = 1, ["height"] = 1080, ["background"] = "#ffffff", ["elements"] = layers };
+    }
+
+    [Theory]
+    [InlineData("width", "0")]
+    [InlineData("opacity", "2")]
+    [InlineData("text", "null")]
+    [InlineData("src", "\"https://example.com/image.png\"")]
+    [InlineData("fontFamily", "\"unsupported\"")]
+    public async Task Invalid_layer_properties_are_rejected(string field, string json)
+    {
+        var values = Values();
+        var design = StudioDesign();
+        design["elements"]![0]![field] = JsonNode.Parse(json);
+        values["design"] = design;
+        var response = await _factory.ClientFor("designer").PostAsJsonAsync("/api/projects", Save(values, 0));
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Rejects_duplicate_layer_ids_and_empty_page_blocks()
+    {
+        var values = Values();
+        var design = StudioDesign();
+        design["elements"]![1]!["id"] = "text";
+        values["design"] = design;
+        Assert.Equal(HttpStatusCode.BadRequest, (await _factory.ClientFor("designer").PostAsJsonAsync("/api/projects", Save(values, 0))).StatusCode);
+        values.Remove("design");
+        values["landing"] = JsonNode.Parse("""{"version":1,"blocks":[]}""");
+        Assert.Equal(HttpStatusCode.BadRequest, (await _factory.ClientFor("designer").PostAsJsonAsync("/api/projects", Save(values, 0))).StatusCode);
+    }
+
+    [Fact]
     public async Task Public_endpoints_and_errors_use_problem_details()
     {
         var anonymous = _factory.ClientFor(null);

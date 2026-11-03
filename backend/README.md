@@ -31,3 +31,16 @@ docker build -t cartao-api .
 Authenticated (Firebase `Authorization: Bearer <idToken>`, verified e-mail):
 `GET/POST /api/projects`, `GET/PUT/DELETE /api/projects/{id}`, `POST /api/projects/{id}/publish`, `DELETE /api/projects/{id}/publication` (204).
 Public: `GET /api/pages/{slug}`. Errors use `application/problem+json`; stale revisions and taken slugs return 409.
+
+## Visual editor
+
+`values.design` and `values.landing` are optional, versioned JSON objects. Legacy
+projects omit these fields and retain their original rendering. Design supports
+up to 40 validated text/image/shape layers; landing supports 1–16 responsive
+blocks, with up to 12 service items each. Image sources are `photo` (the primary
+photo) or validated PNG data URLs; remote URLs and SVG are rejected.
+
+Both draft and publication snapshots preserve these fields in the existing JSONB
+column, without a schema migration. Deploy the API before the updated frontends.
+The existing request-size limit still applies to the complete composition,
+including all embedded photos; the editor limits saved files to 7.5 MB.
