@@ -92,6 +92,13 @@ EDITOR VISUAL
 - Posts e Stories: escolha Editorial, Impacto ou Essencial, ou comece em branco.
 - Projetos antigos mantem o layout original ate escolher um modelo ou adicionar uma camada.
 - Camadas: varias fotos, textos, retangulos e elipses; selecao, arraste, redimensionamento pelo canto e posicoes numericas.
+- + Forma abre uma selecao de retangulo, elipse, triangulo, losango, estrela, hexagono, seta e balao. Nas propriedades, ative "Texto dentro da forma" para escrever nela e ajustar fonte, cor e margem interna. Texto excedente e limitado ao contorno da forma.
+- Caixas de texto aceitam fundo colorido, cantos arredondados, margem interna, borda e sombra. Formas tambem aceitam borda e sombra; cantos arredondados se aplicam a retangulos e baloes. Efeitos ficam no PNG, no JSON e no salvamento online; projetos antigos mantem a aparencia.
+- Texto: ao adicionar uma caixa, digite diretamente na arte. Dois cliques, Enter/F2 ou "Escrever na caixa de texto" iniciam a edicao; Esc ou clique fora encerra. O campo Texto das propriedades continua disponivel. Camadas bloqueadas nao permitem edicao.
+- Alcas no meio das laterais ajustam somente a largura; em cima/baixo ajustam somente a altura. O canto ajusta ambas. Funcionam tambem em elementos girados e com desfazer/refazer.
+- Novas fotos usam "Largura e altura independentes (sem cortar)": a lateral altera apenas a largura visivel, cima/baixo apenas a altura, mesmo deformando a proporcao. Fotos no modo inteiro ou sem modo definido passam a esse ajuste ao redimensionar. "Foto inteira" preserva a proporcao dentro da caixa ate o proximo redimensionamento. "Preencher e recortar" preserva o recorte dos modelos.
+- O gesto termina ao soltar o mouse, cancelar o toque ou trocar de janela. Clique no centro para selecionar/mover; arraste uma alca para redimensionar. Um clique sem arraste nao muda o tamanho.
+- No modo "Preencher e recortar", alterar a caixa muda o enquadramento; use zoom e deslocamento para ajustar o recorte. No modo independente, a foto inteira ocupa a caixa e nao usa zoom/deslocamento.
 - Propriedades: tamanho, rotacao, opacidade, ordem, bloqueio, duplicacao, fontes, alinhamento e cores.
 - Fotos: enquadramento com zoom e deslocamento, cantos arredondados, brilho, contraste, saturacao e filtros basicos. Nao usa IA.
 - Textos longos sao limitados pela caixa: aumente a altura para mostrar mais linhas.

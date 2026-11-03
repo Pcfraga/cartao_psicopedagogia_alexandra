@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState, type PointerEvent } from "react";
-import { element, fonts, landingBlock, limits, type DesignElement, type LandingBlock, type ProjectValues } from "@atelie/studio";
+import { useCallback, useEffect, useRef, useState, type PointerEvent } from "react";
+import { element, fonts, shapes, landingBlock, limits, resizeElement, type ResizeHandle, type DesignElement, type LandingBlock, type ProjectValues } from "@atelie/studio";
 import { createTemplate, pngPhoto, renderPost } from "@atelie/studio/canvas";
 import { LandingContent } from "@atelie/studio/landing";
 
@@ -33,6 +33,9 @@ function NumberControl({ label, value, min, max, step, commit, notify }: {
 export function StudioEditor({ values, photo, busy, onChange, onPhoto, notify }: Props) {
   const [tab, setTab] = useState<"templates" | "layers" | "content">("templates");
   const [selected, setSelected] = useState<string | null>(null);
+  const [editingText, setEditingText] = useState<string | null>(null);
+  const [shapePicker, setShapePicker] = useState(false);
+  const textEditor = useRef<HTMLTextAreaElement>(null);
   const [zoom, setZoom] = useState(100);
   const [mobile, setMobile] = useState(false);
   const [past, setPast] = useState<ProjectValues[]>([]);
@@ -44,13 +47,43 @@ export function StudioEditor({ values, photo, busy, onChange, onPhoto, notify }:
   const uploader = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const uploadAction = useRef<"image" | "replace" | "photo" | "block">("image");
-  const gesture = useRef<{ id: number; x: number; y: number; scale: number; mode: "move" | "resize"; item: DesignElement; initial: ProjectValues } | null>(null);
+  const gesture = useRef<{ id: number; x: number; y: number; scale: number; mode: "move" | ResizeHandle; item: DesignElement; initial: ProjectValues; capture: HTMLDivElement } | null>(null);
+  const end = useCallback(() => {
+    const g = gesture.current;
+    gesture.current = null;
+    if (!g) return;
+    if (g.capture.hasPointerCapture(g.id)) g.capture.releasePointerCapture(g.id);
+    if (g.initial !== last.current) { setPast(p => [...p.slice(-29), g.initial]); setFuture([]); }
+  }, []);
+  useEffect(() => {
+    const release = (event: globalThis.PointerEvent) => { if (gesture.current?.id === event.pointerId) end(); };
+    const visibility = () => { if (document.hidden) end(); };
+    window.addEventListener("pointerup", release, true);
+    window.addEventListener("pointercancel", release, true);
+    window.addEventListener("blur", end);
+    document.addEventListener("visibilitychange", visibility);
+    return () => {
+      window.removeEventListener("pointerup", release, true);
+      window.removeEventListener("pointercancel", release, true);
+      window.removeEventListener("blur", end);
+      document.removeEventListener("visibilitychange", visibility);
+      const g = gesture.current;
+      gesture.current = null;
+      if (g?.capture.hasPointerCapture(g.id)) g.capture.releasePointerCapture(g.id);
+    };
+  }, [end]);
   const design = values.design;
   const item = design?.elements.find(e => e.id === selected);
   const block = values.landing?.blocks.find(b => b.id === selected);
   const landing = values.format === "landing";
   const height = values.format === "story" ? 1920 : 1080;
   const disabled = busy || uploading;
+  useEffect(() => {
+    if (editingText && editingText === selected && !disabled && !item?.locked) {
+      textEditor.current?.focus();
+      textEditor.current?.select();
+    } else if (editingText) setEditingText(null);
+  }, [editingText, selected, disabled, item?.locked]);
   useEffect(() => {
     if (own.current !== values) { setPast([]); setFuture([]); setSelected(null); }
     last.current = values;
@@ -77,7 +110,9 @@ export function StudioEditor({ values, photo, busy, onChange, onPhoto, notify }:
     if (landing) return;
     let active = true;
     const target = document.createElement("canvas");
-    renderPost(target, values, photo).then(() => {
+    const preview = editingText && design ? { ...values, design: { ...design,
+      elements: design.elements.map(e => e.id === editingText ? { ...e, text: "" } : e) } } : values;
+    renderPost(target, preview, photo).then(() => {
       if (active && canvas.current) {
         canvas.current.width = target.width; canvas.current.height = target.height;
         const ctx = canvas.current.getContext("2d");
@@ -86,21 +121,26 @@ export function StudioEditor({ values, photo, busy, onChange, onPhoto, notify }:
       }
     }).catch(error => { if (active) notify(error instanceof Error ? error.message : "Não foi possível gerar a prévia."); });
     return () => { active = false; };
-  }, [values, photo, landing, notify]);
+  }, [values, photo, landing, notify, editingText, design]);
   function patch(changes: Partial<DesignElement>) {
     if (!design || !item) return;
+    if (item.type === "image" && item.fit !== "cover" && item.fit !== "stretch" && (changes.width !== undefined || changes.height !== undefined)) {
+      changes = { fit: "stretch", zoom: 1, panX: 50, panY: 50, ...changes };
+    }
     apply({ ...values, design: { ...design, elements: design.elements.map(e => e.id === item.id ? { ...e, ...changes } : e) } });
   }
   function patchBlock(changes: Partial<LandingBlock>) {
     if (!block || !values.landing) return;
     apply({ ...values, landing: { ...values.landing, blocks: values.landing.blocks.map(b => b.id === block.id ? { ...b, ...changes } : b) } });
   }
-  function add(type: DesignElement["type"], src?: string) {
+  function add(type: DesignElement["type"], src?: string, shape?: DesignElement["shape"]) {
     const current = design || createTemplate(values);
     if (current.elements.length >= 40) { notify("Limite de 40 camadas por arte."); return; }
-    const next = element(type, { ...(src ? { src } : {}), y: height / 3, color: values.primary, background: values.accent });
+    const next = element(type, { ...(src ? { src } : {}), ...(shape ? { shape, name: shapes[shape], text: "", padding: 32, align: "center" as const } : {}),
+      y: height / 3, color: values.primary, background: values.accent });
     apply({ ...values, design: { ...current, elements: [...current.elements, next] } });
     setSelected(next.id); setTab("layers");
+    if (type === "text") setEditingText(next.id);
   }
   function remove() {
     if (item && !item.locked && design) {
@@ -131,34 +171,35 @@ export function StudioEditor({ values, photo, busy, onChange, onPhoto, notify }:
       apply({ ...values, design: { ...design, elements } });
     }
   }
-  function start(event: PointerEvent<HTMLElement>, target: DesignElement, mode: "move" | "resize") {
+  function start(event: PointerEvent<HTMLElement>, target: DesignElement, mode: "move" | ResizeHandle) {
+    if (event.button !== 0 || !event.isPrimary || gesture.current) return;
+    event.preventDefault();
     event.stopPropagation(); setSelected(target.id); setTab("layers");
     if (target.locked || disabled || !stage.current) return;
-    event.currentTarget.setPointerCapture(event.pointerId);
+    event.currentTarget.closest<HTMLButtonElement>(".canvas-object")?.focus({ preventScroll: true });
+    const capture = stage.current;
+    capture.setPointerCapture(event.pointerId);
     gesture.current = { id: event.pointerId, x: event.clientX, y: event.clientY,
-      scale: stage.current.getBoundingClientRect().width / 1080, mode, item: target, initial: values };
+      scale: capture.getBoundingClientRect().width / 1080, mode, item: target, initial: values, capture };
   }
-  function move(event: PointerEvent<HTMLButtonElement>) {
+  function move(event: PointerEvent<HTMLDivElement>) {
     const g = gesture.current;
     if (!g || g.id !== event.pointerId || !last.current.design) return;
+    if ((event.buttons & 1) === 0) { end(); return; }
+    event.preventDefault();
+    if (last.current === g.initial && Math.hypot(event.clientX - g.x, event.clientY - g.y) < 3) return;
     const dx = (event.clientX - g.x) / g.scale, dy = (event.clientY - g.y) / g.scale;
-    const angle = g.item.rotation * Math.PI / 180;
-    const w = clamp(Math.round(g.item.width + dx * Math.cos(angle) + dy * Math.sin(angle)), 20, 2160);
-    const h = clamp(Math.round(g.item.height - dx * Math.sin(angle) + dy * Math.cos(angle)), 20, 3840);
     const changes = g.mode === "move" ? { x: clamp(Math.round(g.item.x + dx), -2160, 2160), y: clamp(Math.round(g.item.y + dy), -3840, 3840) } :
-      { width: w, height: h,
-        x: clamp(g.item.x + (g.item.width - w) / 2 + ((w - g.item.width) * Math.cos(angle) - (h - g.item.height) * Math.sin(angle)) / 2, -2160, 2160),
-        y: clamp(g.item.y + (g.item.height - h) / 2 + ((w - g.item.width) * Math.sin(angle) + (h - g.item.height) * Math.cos(angle)) / 2, -3840, 3840) };
+      { ...(g.item.type === "image" && g.item.fit !== "cover" && g.item.fit !== "stretch" ? { fit: "stretch" as const, zoom: 1, panX: 50, panY: 50 } : {}),
+        ...resizeElement(g.item, g.mode, dx, dy) };
     apply({ ...last.current, design: { ...last.current.design, elements: last.current.design.elements.map(e => e.id === g.item.id ? { ...e, ...changes } : e) } }, false);
-  }
-  function end() {
-    const g = gesture.current;
-    gesture.current = null;
-    if (g && g.initial !== last.current) { setPast(p => [...p.slice(-29), g.initial]); setFuture([]); }
   }
   function keyboard(event: React.KeyboardEvent) {
     if (disabled || event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement || event.target instanceof HTMLSelectElement) return;
     const mod = event.ctrlKey || event.metaKey;
+    if ((item?.type === "text" || item?.showText) && !item.locked && !mod && (event.key === "Enter" || event.key === "F2")) {
+      event.preventDefault(); end(); setEditingText(item.id); return;
+    }
     if (mod && event.key.toLowerCase() === "z") { event.preventDefault(); if (event.shiftKey) redo(); else undo(); }
     if (mod && event.key.toLowerCase() === "d" && item) { event.preventDefault(); duplicate(); }
     if (event.key === "Delete") { event.preventDefault(); remove(); }
@@ -240,7 +281,10 @@ export function StudioEditor({ values, photo, busy, onChange, onPhoto, notify }:
           </div>{!values.landing && <p className="muted">Sua página usa o modelo original. Escolha um modelo para personalizar todos os blocos.</p>}
             <div className="layer-list">{values.landing?.blocks.map((b, i) => <button key={b.id} className={selected === b.id ? "active" : ""} onClick={() => setSelected(b.id)}>
               <span>{String(i + 1).padStart(2, "0")} · {blockNames[b.type]}</span><small>{b.title}</small></button>)}</div>
-          </> : <><h2>Elementos da arte</h2><div className="add-tools"><button onClick={() => add("text")}>+ Texto</button><button onClick={() => choose("image")}>+ Foto</button><button onClick={() => add("shape")}>+ Forma</button></div>
+          </> : <><h2>Elementos da arte</h2><div className="add-tools"><button onClick={() => add("text")}>+ Texto</button><button onClick={() => choose("image")}>+ Foto</button><button aria-expanded={shapePicker} onClick={() => setShapePicker(!shapePicker)}>+ Forma</button></div>
+            {shapePicker && <div className="shape-picker" role="group" aria-label="Escolher forma">
+              {(Object.keys(shapes) as DesignElement["shape"][]).map(shape => <button key={shape} onClick={() => { add("shape", undefined, shape); setShapePicker(false); }}>{shapes[shape]}</button>)}
+            </div>}
             {!design && <p className="muted">Layout original preservado. Escolha um modelo ou adicione um elemento para ativar a edição livre.</p>}
             {design && <label>Cor do fundo<input type="color" value={design.background} onChange={e => apply({ ...values, design: { ...design, background: e.target.value } })} /></label>}
             <div className="layer-list">{design && [...design.elements].reverse().map(e => <button key={e.id} className={selected === e.id ? "active" : ""} onClick={() => setSelected(e.id)}>
@@ -256,19 +300,49 @@ export function StudioEditor({ values, photo, busy, onChange, onPhoto, notify }:
         <div className="canvas-scroll">
           {landing ? <div className={`landing-frame ${mobile ? "mobile" : ""}`}><LandingContent values={values} photo={photo} /></div> :
             <div className={`canvas-paper ${values.format}`} style={{ width: `${zoom}%`, maxWidth: zoom > 100 ? "none" : undefined }} ref={stage}
+              onPointerMove={move}
+              onDoubleClick={event => {
+                if (event.target === event.currentTarget && (item?.type === "text" || item?.showText) && !item.locked && !disabled) {
+                  end(); setEditingText(item.id);
+                }
+              }}
+              onLostPointerCapture={event => { if (gesture.current?.id === event.pointerId) end(); }}
+              onDragStart={event => event.preventDefault()}
               onPointerDown={e => { if (e.target === e.currentTarget || e.target === canvas.current) setSelected(null); }}>
               <canvas ref={canvas} aria-label="Pré-visualização do material" />
               {design?.elements.map(e => <button key={e.id} aria-label={`Selecionar ${e.name}`} aria-pressed={selected === e.id} disabled={disabled}
                 className={`canvas-object ${selected === e.id ? "selected" : ""} ${e.locked ? "locked" : ""}`}
                 style={{ left: `${e.x / 10.8}%`, top: `${e.y / height * 100}%`, width: `${e.width / 10.8}%`, height: `${e.height / height * 100}%`, transform: `rotate(${e.rotation}deg)` }}
-                onPointerDown={event => start(event, e, "move")} onPointerMove={move} onPointerUp={end} onPointerCancel={end} onLostPointerCapture={end}
+                draggable={false} onPointerDown={event => start(event, e, "move")}
+                onDoubleClick={() => { if ((e.type === "text" || e.showText) && !e.locked) { end(); setEditingText(e.id); } }}
                 onClick={() => { setSelected(e.id); setTab("layers"); }}>
-                {selected === e.id && !e.locked && <span className="resize-handle" onPointerDown={event => start(event, e, "resize")} />}
+                {selected === e.id && !e.locked && ([
+                  ["left", "Ajustar largura pela esquerda"], ["right", "Ajustar largura pela direita"],
+                  ["top", "Ajustar altura por cima"], ["bottom", "Ajustar altura por baixo"],
+                  ["corner", "Ajustar largura e altura"]
+                ] as const).map(([handle, label]) => <span key={handle} className={`resize-handle resize-${handle}`} title={label}
+                  onPointerDown={event => start(event, e, handle)} onClick={event => event.stopPropagation()} />)}
               </button>)}
+              {(item?.type === "text" || item?.showText) && editingText === item.id && !item.locked && !disabled &&
+                <textarea ref={textEditor} className="canvas-text-editor" aria-label="Editar texto na arte" maxLength={2000}
+                  value={item.text} onChange={event => patch({ text: event.target.value })}
+                  onPointerDown={event => event.stopPropagation()}
+                  onBlur={() => setEditingText(null)}
+                  onKeyDown={event => {
+                    if (event.key === "Escape" && !event.nativeEvent.isComposing) {
+                      event.preventDefault(); setEditingText(null);
+                      stage.current?.querySelector<HTMLButtonElement>(".canvas-object.selected")?.focus({ preventScroll: true });
+                    }
+                  }}
+                  style={{ left: `${item.x / 10.8}%`, top: `${item.y / height * 100}%`, width: `${item.width / 10.8}%`,
+                    height: `${item.height / height * 100}%`, transform: `rotate(${item.rotation}deg)`,
+                    fontSize: `${item.fontSize / 10.8}cqw`, fontFamily: item.fontFamily, fontWeight: item.bold ? 700 : 400,
+                    fontStyle: item.italic ? "italic" : "normal", textAlign: item.align, color: item.color, opacity: item.opacity,
+                    padding: `${Math.min(item.padding ?? 0, (item.width - 1) / 2, (item.height - 1) / 2) / 10.8}cqw` }} />}
             </div>}
         </div>
         <div className="canvas-status"><span>{landing ? "Página responsiva · HTML independente" : `1080 × ${height} px · PNG em alta resolução`}</span><span>{landing ? `${values.landing?.blocks.length || 3} blocos` : `${design?.elements.length || 0} camadas`}</span></div>
-        <p className="studio-tip">{landing ? "Use Blocos para mudar a ordem e editar cada seção." : "Selecione uma camada para editar. Arraste para mover; use o ponto no canto para redimensionar. Setas movem 1 px (Shift: 10 px)."}</p>
+        <p className="studio-tip">{landing ? "Use Blocos para mudar a ordem e editar cada seção." : "Dê dois cliques no texto para escrever (ou Enter/F2). Esc encerra a edição. Arraste para mover. Alças laterais ajustam largura; superior/inferior, altura; canto, ambas. Setas movem 1 px (Shift: 10 px)."}</p>
       </div>
       <aside className="studio-inspector"><fieldset disabled={disabled}><h2>{item ? "Propriedades" : block ? "Editar bloco" : "Seu toque pessoal"}</h2>
         {!item && !block && <div className="empty-selection"><span>✦</span><p>Selecione {landing ? "um bloco na lista" : "um elemento na arte ou na lista de camadas"} para personalizar.</p><small>Suas alterações só vão para a versão pública quando você publicar.</small></div>}
@@ -283,20 +357,41 @@ export function StudioEditor({ values, photo, busy, onChange, onPhoto, notify }:
             <div className="buttons compact"><button onClick={() => patch({ x: (1080 - item.width) / 2 })}>Centralizar X</button><button onClick={() => patch({ y: (height - item.height) / 2 })}>Centralizar Y</button></div>
             {range("Rotação (graus)", item.rotation, -180, 180, rotation => patch({ rotation }))}
             {range("Opacidade (%)", item.opacity * 100, 0, 100, opacity => patch({ opacity: opacity / 100 }))}
-            {item.type === "text" && <><label>Texto<textarea maxLength={2000} value={item.text} onChange={e => patch({ text: e.target.value })} /></label>
+            {item.type === "shape" && <label className="check"><input type="checkbox" checked={item.showText ?? false}
+              onChange={e => patch({ showText: e.target.checked })} />Texto dentro da forma</label>}
+            {(item.type === "text" || (item.type === "shape" && item.showText)) && <><button className="outline full" onClick={() => { end(); setEditingText(item.id); }}>Escrever na caixa de texto</button>
+              <label>Texto<textarea maxLength={2000} value={item.text} onChange={e => patch({ text: e.target.value })} /></label>
               <label>Fonte<select value={item.fontFamily} onChange={e => patch({ fontFamily: e.target.value as DesignElement["fontFamily"] })}>{fonts.map(f => <option key={f}>{f}</option>)}</select></label>
               <div className="control-grid">{numberControl("Tamanho (px)", item.fontSize, 10, 240, fontSize => patch({ fontSize }))}
                 <label>Cor<input type="color" value={item.color} onChange={e => patch({ color: e.target.value })} /></label></div>
               <div className="buttons compact"><button aria-pressed={item.bold} onClick={() => patch({ bold: !item.bold })}><b>Negrito</b></button><button aria-pressed={item.italic} onClick={() => patch({ italic: !item.italic })}><i>Itálico</i></button></div>
               <label>Alinhamento<select value={item.align} onChange={e => patch({ align: e.target.value as DesignElement["align"] })}><option value="left">Esquerda</option><option value="center">Centro</option><option value="right">Direita</option></select></label>
               <p className="muted">O texto é limitado à caixa. Aumente a altura se alguma linha não aparecer.</p></>}
-            {item.type === "shape" && <><label>Formato<select value={item.shape} onChange={e => patch({ shape: e.target.value as DesignElement["shape"] })}><option value="rectangle">Retângulo / caixa</option><option value="ellipse">Círculo / elipse</option></select></label>
+            {item.type === "shape" && <><label>Formato da forma<select value={item.shape} onChange={e => patch({ shape: e.target.value as DesignElement["shape"] })}>
+              {(Object.keys(shapes) as DesignElement["shape"][]).map(shape => <option key={shape} value={shape}>{shapes[shape]}</option>)}</select></label>
               <label>Preenchimento<input type="color" value={item.background} onChange={e => patch({ background: e.target.value })} /></label></>}
-            {item.type !== "text" && range("Cantos arredondados", item.radius, 0, 540, radius => patch({ radius }))}
+            {item.type === "text" && <><label className="check"><input type="checkbox" checked={item.textBackground ?? false}
+              onChange={e => patch({ textBackground: e.target.checked })} />Fundo da caixa de texto</label>
+              {item.textBackground && <label>Cor do fundo da caixa<input type="color" value={item.background} onChange={e => patch({ background: e.target.value })} /></label>}</>}
+            {(item.type !== "shape" || item.shape === "rectangle" || item.shape === "speech") &&
+              range("Cantos arredondados", item.radius, 0, 540, radius => patch({ radius }))}
+            {item.type !== "image" && <>
+              {range("Margem interna do texto", item.padding ?? 0, 0, 100, padding => patch({ padding }))}
+              {range("Espessura da borda", item.borderWidth ?? 0, 0, 40, borderWidth => patch({ borderWidth }))}
+              {!!item.borderWidth && <label>Cor da borda<input type="color" value={item.borderColor ?? "#123d75"} onChange={e => patch({ borderColor: e.target.value })} /></label>}
+              {range("Sombra", item.shadowBlur ?? 0, 0, 80, shadowBlur => patch({ shadowBlur }))}
+              {!!item.shadowBlur && <label>Cor da sombra<input type="color" value={item.shadowColor ?? "#000000"} onChange={e => patch({ shadowColor: e.target.value })} /></label>}
+            </>}
             {item.type === "image" && <><button className="outline full" onClick={() => choose("replace")}>Substituir foto</button>
-              {range("Recorte / zoom (%)", item.zoom * 100, 100, 400, zoom => patch({ zoom: zoom / 100 }))}
+              <label>Ajuste da foto<select value={item.fit ?? "cover"} onChange={e => patch({ fit: e.target.value as DesignElement["fit"], zoom: 1, panX: 50, panY: 50 })}>
+                <option value="stretch">Largura e altura independentes (sem cortar)</option>
+                <option value="contain">Foto inteira (sem cortar)</option>
+                <option value="cover">Preencher e recortar</option>
+              </select></label>
+              <p className="muted">As alças ajustam largura e altura separadamente, alterando a proporção da foto. Preencher e recortar mantém o modo de recorte dos modelos.</p>
+              {item.fit !== "stretch" && <>{range("Recorte / zoom (%)", item.zoom * 100, 100, 400, zoom => patch({ zoom: zoom / 100 }))}
               {range("Enquadramento horizontal", item.panX, 0, 100, panX => patch({ panX }))}
-              {range("Enquadramento vertical", item.panY, 0, 100, panY => patch({ panY }))}
+              {range("Enquadramento vertical", item.panY, 0, 100, panY => patch({ panY }))}</>}
               {range("Brilho", item.brightness, 0, 200, brightness => patch({ brightness }))}
               {range("Contraste", item.contrast, 0, 200, contrast => patch({ contrast }))}
               {range("Saturação", item.saturation, 0, 200, saturation => patch({ saturation }))}

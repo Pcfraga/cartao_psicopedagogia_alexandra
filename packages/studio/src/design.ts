@@ -1,4 +1,6 @@
 export const fonts = ["Arial", "Georgia", "Trebuchet MS", "Verdana", "Courier New"] as const;
+export const shapes = { rectangle: "Retângulo / caixa", ellipse: "Círculo / elipse", triangle: "Triângulo",
+  diamond: "Losango", star: "Estrela", hexagon: "Hexágono", arrow: "Seta", speech: "Balão de fala" } as const;
 export interface DesignElement {
   id: string;
   type: "text" | "image" | "shape";
@@ -19,8 +21,16 @@ export interface DesignElement {
   color: string;
   background: string;
   radius: number;
-  shape: "rectangle" | "ellipse";
+  shape: keyof typeof shapes;
+  showText?: boolean;
+  textBackground?: boolean;
+  padding?: number;
+  borderWidth?: number;
+  borderColor?: string;
+  shadowBlur?: number;
+  shadowColor?: string;
   src: string;
+  fit?: "contain" | "cover" | "stretch";
   zoom: number;
   panX: number;
   panY: number;
@@ -49,6 +59,22 @@ export interface LandingDesign {
   blocks: LandingBlock[];
 }
 export const designLimits = { elements: 40, blocks: 16, photoBytes: 5 * 1024 * 1024, fileBytes: 7_500_000 };
+export type ResizeHandle = "right" | "left" | "top" | "bottom" | "corner";
+export function resizeElement(item: DesignElement, handle: ResizeHandle, dx: number, dy: number) {
+  const angle = item.rotation * Math.PI / 180;
+  const cos = Math.cos(angle), sin = Math.sin(angle);
+  const localX = dx * cos + dy * sin, localY = -dx * sin + dy * cos;
+  const horizontal = handle === "left" || handle === "right" || handle === "corner";
+  const vertical = handle === "top" || handle === "bottom" || handle === "corner";
+  const width = horizontal ? Math.max(20, Math.min(2160, Math.round(item.width + localX * (handle === "left" ? -1 : 1)))) : item.width;
+  const height = vertical ? Math.max(20, Math.min(3840, Math.round(item.height + localY * (handle === "top" ? -1 : 1)))) : item.height;
+  const shiftX = (width - item.width) / 2 * (handle === "left" ? -1 : 1);
+  const shiftY = (height - item.height) / 2 * (handle === "top" ? -1 : 1);
+  return { width, height,
+    x: Math.max(-2160, Math.min(2160, item.x + (item.width - width) / 2 + shiftX * cos - shiftY * sin)),
+    y: Math.max(-3840, Math.min(3840, item.y + (item.height - height) / 2 + shiftX * sin + shiftY * cos))
+  };
+}
 const record = (v: unknown): v is Record<string, unknown> => typeof v === "object" && v !== null && !Array.isArray(v);
 const color = (v: unknown): v is string => typeof v === "string" && /^#[a-f0-9]{6}$/i.test(v);
 const string = (v: unknown, max: number): v is string => typeof v === "string" && v.length <= max && !v.includes("\0");
@@ -70,8 +96,16 @@ export function parseDesign(raw: unknown): Design {
       typeof e.locked !== "boolean" || !string(e.text, 2000) || !number(e.fontSize, 10, 240) ||
       !fonts.includes(e.fontFamily as typeof fonts[number]) || typeof e.bold !== "boolean" || typeof e.italic !== "boolean" ||
       !["left", "center", "right"].includes(String(e.align)) || !color(e.color) || !color(e.background) ||
-      !number(e.radius, 0, 1080) || !["rectangle", "ellipse"].includes(String(e.shape)) ||
+      !number(e.radius, 0, 1080) || !Object.hasOwn(shapes, String(e.shape)) ||
+      (e.showText !== undefined && typeof e.showText !== "boolean") ||
+      (e.textBackground !== undefined && typeof e.textBackground !== "boolean") ||
+      (e.padding !== undefined && !number(e.padding, 0, 100)) ||
+      (e.borderWidth !== undefined && !number(e.borderWidth, 0, 40)) ||
+      (e.borderColor !== undefined && !color(e.borderColor)) ||
+      (e.shadowBlur !== undefined && !number(e.shadowBlur, 0, 80)) ||
+      (e.shadowColor !== undefined && !color(e.shadowColor)) ||
       !validImage(e.src) || !number(e.zoom, 1, 4) || !number(e.panX, 0, 100) || !number(e.panY, 0, 100) ||
+      (e.fit !== undefined && e.fit !== "contain" && e.fit !== "cover" && e.fit !== "stretch") ||
       !number(e.brightness, 0, 200) || !number(e.contrast, 0, 200) || !number(e.saturation, 0, 200)) {
       throw new Error("Camada inválida. Confira texto, foto e dimensões.");
     }
@@ -82,6 +116,14 @@ export function parseDesign(raw: unknown): Design {
       fontFamily: e.fontFamily as DesignElement["fontFamily"], bold: e.bold, italic: e.italic,
       align: e.align as DesignElement["align"], color: e.color, background: e.background, radius: e.radius,
       shape: e.shape as DesignElement["shape"], src: e.src, zoom: e.zoom, panX: e.panX, panY: e.panY,
+      ...(e.fit === undefined ? {} : { fit: e.fit as DesignElement["fit"] }),
+      ...(e.showText === undefined ? {} : { showText: e.showText }),
+      ...(e.textBackground === undefined ? {} : { textBackground: e.textBackground }),
+      ...(e.padding === undefined ? {} : { padding: e.padding }),
+      ...(e.borderWidth === undefined ? {} : { borderWidth: e.borderWidth }),
+      ...(e.borderColor === undefined ? {} : { borderColor: e.borderColor }),
+      ...(e.shadowBlur === undefined ? {} : { shadowBlur: e.shadowBlur }),
+      ...(e.shadowColor === undefined ? {} : { shadowColor: e.shadowColor }),
       brightness: e.brightness, contrast: e.contrast, saturation: e.saturation
     };
   });
@@ -110,6 +152,7 @@ export function element(type: DesignElement["type"], overrides: Partial<DesignEl
     x: 100, y: 120, width: 600, height: type === "text" ? 160 : 400, rotation: 0, opacity: 1, locked: false,
     text: "Seu texto aqui", fontSize: 64, fontFamily: "Arial", bold: true, italic: false, align: "left",
     color: "#123d75", background: "#e83d83", radius: 24, shape: "rectangle", src: "photo",
+    ...(type === "image" ? { fit: "stretch" as const } : {}),
     zoom: 1, panX: 50, panY: 50, brightness: 100, contrast: 100, saturation: 100, ...overrides
   };
 }

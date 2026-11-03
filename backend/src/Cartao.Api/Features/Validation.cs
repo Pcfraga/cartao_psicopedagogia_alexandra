@@ -127,10 +127,19 @@ public static partial class Validation
                     !Number(item, "rotation", -360, 360) || !Number(item, "opacity", 0, 1) ||
                     !Number(item, "fontSize", 10, 240) || !Number(item, "radius", 0, 1080) ||
                     !Number(item, "zoom", 1, 4) || !Number(item, "panX", 0, 100) || !Number(item, "panY", 0, 100) ||
+                    (item.TryGetProperty("fit", out _) && !Choice(item, "fit", "contain", "cover", "stretch")) ||
+                    (item.TryGetProperty("showText", out _) && !Boolean(item, "showText")) ||
+                    (item.TryGetProperty("textBackground", out _) && !Boolean(item, "textBackground")) ||
+                    (item.TryGetProperty("padding", out _) && !Number(item, "padding", 0, 100)) ||
+                    (item.TryGetProperty("borderWidth", out _) && !Number(item, "borderWidth", 0, 40)) ||
+                    (item.TryGetProperty("borderColor", out _) && !Color(item, "borderColor")) ||
+                    (item.TryGetProperty("shadowBlur", out _) && !Number(item, "shadowBlur", 0, 80)) ||
+                    (item.TryGetProperty("shadowColor", out _) && !Color(item, "shadowColor")) ||
                     !Number(item, "brightness", 0, 200) || !Number(item, "contrast", 0, 200) || !Number(item, "saturation", 0, 200) ||
                     !Boolean(item, "locked") || !Boolean(item, "bold") || !Boolean(item, "italic") ||
                     !Choice(item, "fontFamily", "Arial", "Georgia", "Trebuchet MS", "Verdana", "Courier New") ||
-                    !Choice(item, "align", "left", "center", "right") || !Choice(item, "shape", "rectangle", "ellipse") ||
+                    !Choice(item, "align", "left", "center", "right") ||
+                    !Choice(item, "shape", "rectangle", "ellipse", "triangle", "diamond", "star", "hexagon", "arrow", "speech") ||
                     !Color(item, "color") || !Color(item, "background") || !Image(item, "src")) return false;
             }
             else

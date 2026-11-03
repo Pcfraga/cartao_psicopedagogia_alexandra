@@ -7,7 +7,7 @@ export function createTemplate(values: ProjectValues, style: "editorial" | "bold
   const base = h - 610;
   return { version: 1, height: h, background: minimal ? "#fffaf3" : values.primary, elements: [
     element("image", { name: "Foto de capa", x: minimal ? 70 : 0, y: minimal ? 70 : 0, width: minimal ? 940 : 1080,
-      height: minimal ? base - 70 : h, radius: minimal ? 40 : 0 }),
+      height: minimal ? base - 70 : h, radius: minimal ? 40 : 0, fit: "cover" }),
     ...(!minimal ? [element("shape", { name: "Fundo do texto", x: 0, y: base - 100, width: 1080, height: 710,
       background: values.primary, radius: 0, opacity: .94 })] : []),
     element("text", { name: "Título", text: values.title, x: 70, y: base - 40, width: 940, height: 200,
@@ -25,29 +25,60 @@ export function createTemplate(values: ProjectValues, style: "editorial" | "bold
 }
 
 function wrappedText(context: CanvasRenderingContext2D, item: DesignElement) {
+  const padding = Math.min(item.padding ?? 0, (item.width - 1) / 2, (item.height - 1) / 2);
+  const width = item.width - padding * 2;
   context.font = `${item.italic ? "italic " : ""}${item.bold ? "700" : "400"} ${item.fontSize}px "${item.fontFamily}"`;
   context.fillStyle = item.color;
   context.textBaseline = "top";
   context.textAlign = item.align;
-  const x = item.align === "center" ? item.width / 2 : item.align === "right" ? item.width : 0;
-  let y = 0;
+  const x = item.align === "center" ? item.width / 2 : item.align === "right" ? item.width - padding : padding;
+  const lines: string[] = [];
   for (const paragraph of item.text.split("\n")) {
     let line = "";
     for (const word of paragraph.split(/\s+/).filter(Boolean)) {
-      if (line && context.measureText(`${line} ${word}`).width > item.width) {
-        context.fillText(line, x, y); line = ""; y += item.fontSize * 1.22;
+      if (line && context.measureText(`${line} ${word}`).width > width) {
+        lines.push(line); line = "";
       }
-      if (context.measureText(word).width > item.width) {
+      if (context.measureText(word).width > width) {
         for (const character of Array.from(word)) {
-          if (line && context.measureText(line + character).width > item.width) {
-            context.fillText(line, x, y); line = ""; y += item.fontSize * 1.22;
+          if (line && context.measureText(line + character).width > width) {
+            lines.push(line); line = "";
           }
           line += character;
         }
       } else line = line ? `${line} ${word}` : word;
     }
-    context.fillText(line, x, y); y += item.fontSize * 1.22;
+    lines.push(line);
   }
+  const textHeight = (lines.length - 1) * item.fontSize * 1.22 + item.fontSize;
+  const bodyHeight = item.type === "shape" && item.shape === "speech" ? item.height * .8 : item.height;
+  const y = item.type === "shape" ? Math.max(padding, (bodyHeight - textHeight) / 2) : padding;
+  lines.forEach((line, i) => context.fillText(line, x, y + i * item.fontSize * 1.22));
+}
+function elementPath(ctx: CanvasRenderingContext2D, item: DesignElement) {
+  const w = item.width, h = item.height;
+  ctx.beginPath();
+  if (item.type !== "shape" || item.shape === "rectangle") {
+    ctx.roundRect(0, 0, w, h, Math.min(item.radius, w / 2, h / 2)); return;
+  }
+  if (item.shape === "ellipse") { ctx.ellipse(w / 2, h / 2, w / 2, h / 2, 0, 0, Math.PI * 2); return; }
+  let points: number[][];
+  switch (item.shape) {
+    case "triangle": points = [[.5, 0], [1, 1], [0, 1]]; break;
+    case "diamond": points = [[.5, 0], [1, .5], [.5, 1], [0, .5]]; break;
+    case "hexagon": points = [[.25, 0], [.75, 0], [1, .5], [.75, 1], [.25, 1], [0, .5]]; break;
+    case "arrow": points = [[0, .25], [.6, .25], [.6, 0], [1, .5], [.6, 1], [.6, .75], [0, .75]]; break;
+    case "speech":
+      ctx.roundRect(0, 0, w, h * .8, Math.min(item.radius, w / 2, h * .4));
+      ctx.moveTo(w * .2, h * .8); ctx.lineTo(w * .2, h); ctx.lineTo(w * .4, h * .8); ctx.closePath(); return;
+    case "star":
+      points = Array.from({ length: 10 }, (_, i) => {
+        const angle = -Math.PI / 2 + i * Math.PI / 5, radius = i % 2 ? .22 : .5;
+        return [.5 + Math.cos(angle) * radius, .5 + Math.sin(angle) * radius];
+      }); break;
+  }
+  points.forEach(([x, y], i) => { if (i === 0) ctx.moveTo(x * w, y * h); else ctx.lineTo(x * w, y * h); });
+  ctx.closePath();
 }
 const imageCache = new Map<string, HTMLImageElement>();
 async function cachedPhoto(source: string) {
@@ -70,20 +101,28 @@ export async function renderDesign(canvas: HTMLCanvasElement, design: Design, so
     ctx.translate(e.x + e.width / 2, e.y + e.height / 2);
     ctx.rotate(e.rotation * Math.PI / 180);
     ctx.translate(-e.width / 2, -e.height / 2);
-    ctx.beginPath();
-    if (e.type === "shape" && e.shape === "ellipse") ctx.ellipse(e.width / 2, e.height / 2, e.width / 2, e.height / 2, 0, 0, Math.PI * 2);
-    else ctx.roundRect(0, 0, e.width, e.height, Math.min(e.radius, e.width / 2, e.height / 2));
-    if (e.type === "shape") { ctx.fillStyle = e.background; ctx.fill(); }
-    else {
-      ctx.clip();
-      if (e.type === "text") wrappedText(ctx, e);
-      else {
-        const image = images[index]!;
-        const scale = Math.max(e.width / image.naturalWidth, e.height / image.naturalHeight) * e.zoom;
-        const w = image.naturalWidth * scale, h = image.naturalHeight * scale;
-        ctx.filter = `brightness(${e.brightness}%) contrast(${e.contrast}%) saturate(${e.saturation}%)`;
-        ctx.drawImage(image, (e.width - w) * e.panX / 100, (e.height - h) * e.panY / 100, w, h);
-      }
+    elementPath(ctx, e);
+    ctx.shadowColor = e.shadowColor ?? "#000000";
+    ctx.shadowBlur = e.shadowBlur ?? 0;
+    const filled = e.type === "shape" || (e.type === "text" && e.textBackground);
+    if (filled) { ctx.fillStyle = e.background; ctx.fill(); ctx.shadowBlur = 0; }
+    ctx.save();
+    ctx.clip();
+    if (e.type === "text" || (e.type === "shape" && e.showText)) wrappedText(ctx, e);
+    else if (e.type === "image") {
+      const image = images[index]!;
+      const scale = (e.fit === "contain" ? Math.min(e.width / image.naturalWidth, e.height / image.naturalHeight) :
+        Math.max(e.width / image.naturalWidth, e.height / image.naturalHeight)) * e.zoom;
+      const w = e.fit === "stretch" ? e.width : image.naturalWidth * scale;
+      const h = e.fit === "stretch" ? e.height : image.naturalHeight * scale;
+      ctx.filter = `brightness(${e.brightness}%) contrast(${e.contrast}%) saturate(${e.saturation}%)`;
+      ctx.drawImage(image, (e.width - w) * e.panX / 100, (e.height - h) * e.panY / 100, w, h);
+    }
+    ctx.restore();
+    ctx.shadowBlur = 0;
+    if (e.borderWidth) {
+      ctx.save(); ctx.clip(); ctx.lineWidth = e.borderWidth * 2;
+      ctx.strokeStyle = e.borderColor ?? "#123d75"; ctx.stroke(); ctx.restore();
     }
     ctx.restore();
   });

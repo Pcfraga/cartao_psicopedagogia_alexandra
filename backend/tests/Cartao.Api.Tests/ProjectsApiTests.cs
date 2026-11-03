@@ -207,6 +207,7 @@ public sealed class ProjectsApiTests : IAsyncLifetime
         var client = _factory.ClientFor("designer");
         var values = Values();
         values["design"] = StudioDesign();
+        values["design"]!["elements"]![1]!["fit"] = "contain";
         values["landing"] = JsonNode.Parse("""
             {"version":1,"blocks":[{"id":"hero","type":"hero","title":"Capa personalizada","body":"Apresentação",
             "items":["Apoio escolar"],"image":"photo","background":"#ffffff","align":"left"}]}
@@ -217,15 +218,19 @@ public sealed class ProjectsApiTests : IAsyncLifetime
         var id = data.GetProperty("id").GetString();
         var read = await Json(await client.GetAsync($"/api/projects/{id}"));
         Assert.Equal(3, read.GetProperty("values").GetProperty("design").GetProperty("elements").GetArrayLength());
+        Assert.Equal("contain", read.GetProperty("values").GetProperty("design").GetProperty("elements")[1].GetProperty("fit").GetString());
         Assert.Equal("Capa personalizada", read.GetProperty("values").GetProperty("landing").GetProperty("blocks")[0].GetProperty("title").GetString());
         Assert.Equal(HttpStatusCode.OK, (await client.PostAsJsonAsync($"/api/projects/{id}/publish", new { slug = "editor-visual", revision = 1 })).StatusCode);
         values["design"]!["elements"]![0]!["text"] = "Novo texto";
+        values["design"]!["elements"]![1]!["fit"] = "stretch";
         Assert.Equal(HttpStatusCode.OK, (await client.PutAsJsonAsync($"/api/projects/{id}", Save(values, 1))).StatusCode);
         var page = await Json(await _factory.ClientFor(null).GetAsync("/api/pages/editor-visual"));
         Assert.Equal("Texto", page.GetProperty("values").GetProperty("design").GetProperty("elements")[0].GetProperty("text").GetString());
+        Assert.Equal("contain", page.GetProperty("values").GetProperty("design").GetProperty("elements")[1].GetProperty("fit").GetString());
         Assert.Equal(HttpStatusCode.OK, (await client.PostAsJsonAsync($"/api/projects/{id}/publish", new { slug = "editor-visual", revision = 2 })).StatusCode);
         page = await Json(await _factory.ClientFor(null).GetAsync("/api/pages/editor-visual"));
         Assert.Equal("Novo texto", page.GetProperty("values").GetProperty("design").GetProperty("elements")[0].GetProperty("text").GetString());
+        Assert.Equal("stretch", page.GetProperty("values").GetProperty("design").GetProperty("elements")[1].GetProperty("fit").GetString());
     }
 
     private static JsonObject StudioDesign()
@@ -251,6 +256,16 @@ public sealed class ProjectsApiTests : IAsyncLifetime
     [InlineData("text", "null")]
     [InlineData("src", "\"https://example.com/image.png\"")]
     [InlineData("fontFamily", "\"unsupported\"")]
+    [InlineData("fit", "\"invalid\"")]
+    [InlineData("fit", "null")]
+    [InlineData("showText", "\"true\"")]
+    [InlineData("textBackground", "null")]
+    [InlineData("padding", "101")]
+    [InlineData("borderWidth", "-1")]
+    [InlineData("borderColor", "\"red\"")]
+    [InlineData("shadowBlur", "81")]
+    [InlineData("shadowColor", "null")]
+    [InlineData("shape", "\"unsupported\"")]
     public async Task Invalid_layer_properties_are_rejected(string field, string json)
     {
         var values = Values();
@@ -259,6 +274,40 @@ public sealed class ProjectsApiTests : IAsyncLifetime
         values["design"] = design;
         var response = await _factory.ClientFor("designer").PostAsJsonAsync("/api/projects", Save(values, 0));
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Theory]
+    [InlineData("rectangle")]
+    [InlineData("ellipse")]
+    [InlineData("triangle")]
+    [InlineData("diamond")]
+    [InlineData("star")]
+    [InlineData("hexagon")]
+    [InlineData("arrow")]
+    [InlineData("speech")]
+    public async Task Shapes_and_text_effects_survive_save_and_publication(string shape)
+    {
+        var client = _factory.ClientFor("shape-designer");
+        var values = Values();
+        var design = StudioDesign();
+        var effects = JsonNode.Parse("""
+            {"textBackground":true,"showText":true,"padding":32,"borderWidth":5,
+             "borderColor":"#ff0000","shadowBlur":20,"shadowColor":"#123d75"}
+            """)!.AsObject();
+        foreach (var index in new[] { 0, 2 })
+            foreach (var pair in effects)
+                design["elements"]![index]![pair.Key] = pair.Value!.DeepClone();
+        design["elements"]![2]!["shape"] = shape;
+        values["design"] = design;
+        var created = await client.PostAsJsonAsync("/api/projects", Save(values, 0));
+        Assert.Equal(HttpStatusCode.Created, created.StatusCode);
+        var id = (await Json(created)).GetProperty("id").GetString();
+        var read = await Json(await client.GetAsync($"/api/projects/{id}"));
+        Assert.True(JsonNode.DeepEquals(design, JsonNode.Parse(read.GetProperty("values").GetProperty("design").GetRawText())));
+        var slug = $"shape-{shape}";
+        Assert.Equal(HttpStatusCode.OK, (await client.PostAsJsonAsync($"/api/projects/{id}/publish", new { slug, revision = 1 })).StatusCode);
+        var page = await Json(await _factory.ClientFor(null).GetAsync($"/api/pages/{slug}"));
+        Assert.True(JsonNode.DeepEquals(design, JsonNode.Parse(page.GetProperty("values").GetProperty("design").GetRawText())));
     }
 
     [Fact]

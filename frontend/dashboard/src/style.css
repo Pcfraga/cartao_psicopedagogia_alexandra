@@ -110,12 +110,26 @@ main { padding: 24px 28px 60px; max-width: 1920px; margin: auto; }
 .canvas-paper { position: relative; margin: auto; box-shadow: 0 8px 32px #24253d20; max-width: 660px; aspect-ratio: 1; }
 .canvas-paper.story { max-width: 390px; aspect-ratio: 9/16; }
 .canvas-paper canvas { display: block; width: 100%; height: auto; }
+.canvas-paper { user-select: none; -webkit-user-select: none; }
+.canvas-paper { container-type: inline-size; }
+.canvas-text-editor {
+  position: absolute; z-index: 2; min-height: 0; margin: 0; padding: 0;
+  border: 0; border-radius: 0; outline: 2px solid #8a67d7;
+  background: transparent; box-shadow: none; resize: none; line-height: 1.22;
+  user-select: text; -webkit-user-select: text; touch-action: auto;
+}
+.canvas-paper, .resize-handle { touch-action: none; }
 .canvas-object { position: absolute; min-height: 0; padding: 0; border: 1px solid transparent; border-radius: 0; background: transparent; touch-action: none; cursor: move; }
 .canvas-object:hover:not(:disabled) { background: #8264e010; box-shadow: none; border-color: #a795df; }
 .canvas-object.selected { outline: 2px solid #8a67d7; outline-offset: -1px; }
 .canvas-object[aria-pressed=true] { background: transparent; box-shadow: none; }
 .canvas-object.locked { cursor: default; }
 .resize-handle { position: absolute; width: 16px; height: 16px; right: -8px; bottom: -8px; border: 2px solid #8060cb; background: white; border-radius: 50%; cursor: nwse-resize; }
+.resize-left, .resize-right { top: 50%; bottom: auto; transform: translateY(-50%); cursor: ew-resize; }
+.resize-left { left: -8px; right: auto; }
+.resize-top, .resize-bottom { left: 50%; right: auto; transform: translateX(-50%); cursor: ns-resize; }
+.resize-top { top: -8px; bottom: auto; }
+.resize-handle::after { content: ""; position: absolute; inset: -6px; }
 .canvas-status { display: flex; justify-content: space-between; gap: 10px; padding: 12px 18px; font-size: 10px; color: #7d8193; border-top: 1px solid #dfe1e9; }
 .studio-tip { padding: 0 18px 16px; margin: 0; color: #7d8193; font-size: 11px; }
 .studio-inspector { padding: 20px 16px; min-width: 0; }
@@ -128,6 +142,8 @@ main { padding: 24px 28px 60px; max-width: 1920px; margin: auto; }
 .studio-inspector .compact { margin-bottom: 16px; }
 .add-tools { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; margin-bottom: 20px; }
 .add-tools button { padding: 8px 4px; background: #f0edf8; color: #675289; font-size: 12px; }
+.shape-picker { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; margin-bottom: 16px; }
+.shape-picker button { padding: 10px 6px; font-size: 12px; background: #f0edf8; color: #675289; }
 .layer-list { display: grid; gap: 6px; max-height: 600px; overflow-y: auto; }
 .layer-list button { text-align: left; background: #f7f8fb; padding: 10px; min-width: 0; }
 .layer-list button.active { background: #eee8f8; box-shadow: inset 3px 0 #8463c5; }
