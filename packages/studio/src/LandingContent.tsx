@@ -6,7 +6,7 @@ export function LandingContent({ values, photo }: { values: ProjectValues; photo
   const contact = contactUrl(values.phone);
   if (values.landing) return <article className="public-landing custom-landing" style={colors}>
     <nav className="landing-nav" aria-label="Contato"><strong>{values.name} · {values.role}</strong>
-      <a className="landing-button" href={contact} target="_blank" rel="noopener noreferrer">WhatsApp</a></nav>
+      <a className="landing-button" href={contact} target="_blank" rel="noopener noreferrer">{values.cta}</a></nav>
     {values.landing.blocks.map(block => {
       const image = block.image === "photo" ? photo : block.image;
       return <section key={block.id} className={`custom-block block-${block.type}`} style={{ background: block.background, textAlign: block.align }}>
@@ -25,7 +25,7 @@ export function LandingContent({ values, photo }: { values: ProjectValues; photo
   return <article className="public-landing" style={colors}>
     <nav className="landing-nav" aria-label="Contato">
       <strong>{values.name} · {values.role}</strong>
-      <a className="landing-button" href={contact} target="_blank" rel="noopener noreferrer">WhatsApp</a>
+      <a className="landing-button" href={contact} target="_blank" rel="noopener noreferrer">{values.cta}</a>
     </nav>
     <section className="landing-hero">
       <div className="landing-copy">

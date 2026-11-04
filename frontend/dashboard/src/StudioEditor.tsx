@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState, type PointerEvent } from "react";
-import { element, fonts, shapes, landingBlock, limits, resizeElement, type ResizeHandle, type DesignElement, type LandingBlock, type ProjectValues } from "@atelie/studio";
+import { contactUrl, element, fonts, shapes, landingBlock, limits, resizeElement, type ResizeHandle, type DesignElement, type LandingBlock, type ProjectValues } from "@atelie/studio";
 import { createTemplate, pngPhoto, renderPost } from "@atelie/studio/canvas";
 import { LandingContent } from "@atelie/studio/landing";
 
@@ -342,7 +342,7 @@ export function StudioEditor({ values, photo, busy, onChange, onPhoto, notify }:
             </div>}
         </div>
         <div className="canvas-status"><span>{landing ? "Página responsiva · HTML independente" : `1080 × ${height} px · PNG em alta resolução`}</span><span>{landing ? `${values.landing?.blocks.length || 3} blocos` : `${design?.elements.length || 0} camadas`}</span></div>
-        <p className="studio-tip">{landing ? "Use Blocos para mudar a ordem e editar cada seção." : "Dê dois cliques no texto para escrever (ou Enter/F2). Esc encerra a edição. Arraste para mover. Alças laterais ajustam largura; superior/inferior, altura; canto, ambas. Setas movem 1 px (Shift: 10 px)."}</p>
+        <p className="studio-tip">{landing ? "Em Blocos, selecione uma seção para editar textos e fotos. Número do WhatsApp e texto do link ficam no bloco Contato." : "Dê dois cliques no texto para escrever (ou Enter/F2). Esc encerra a edição. Arraste para mover. Alças laterais ajustam largura; superior/inferior, altura; canto, ambas. Setas movem 1 px (Shift: 10 px)."}</p>
       </div>
       <aside className="studio-inspector"><fieldset disabled={disabled}><h2>{item ? "Propriedades" : block ? "Editar bloco" : "Seu toque pessoal"}</h2>
         {!item && !block && <div className="empty-selection"><span>✦</span><p>Selecione {landing ? "um bloco na lista" : "um elemento na arte ou na lista de camadas"} para personalizar.</p><small>Suas alterações só vão para a versão pública quando você publicar.</small></div>}
@@ -406,7 +406,16 @@ export function StudioEditor({ values, photo, busy, onChange, onPhoto, notify }:
             if (items.length > 12 || items.some(i => i.length > 240)) { notify("Use até 12 serviços com até 240 caracteres cada."); return; }
             patchBlock({ items });
           }} /></label>}
-          {(block.type === "hero" || block.type === "gallery") && <button className="outline full" onClick={() => choose("block")}>Escolher foto do bloco</button>}
+          {(block.type === "hero" || block.type === "gallery") && <>
+            <img className="landing-image-preview" src={block.image === "photo" ? photo : block.image} alt={`Foto do bloco: ${block.title || blockNames[block.type]}`} />
+            <button className="outline full" onClick={() => choose("block")}>Trocar foto do bloco</button>
+          </>}
+          {block.type === "contact" && <>
+            <label>Texto do link de contato<input maxLength={limits.cta} value={values.cta} onChange={e => apply({ ...values, cta: e.target.value })} /></label>
+            <label>Telefone do WhatsApp<input type="tel" maxLength={limits.phone} value={values.phone}
+              onChange={e => apply({ ...values, phone: e.target.value })} /></label>
+            <a className="contact-link-preview" href={contactUrl(values.phone)} target="_blank" rel="noopener noreferrer">{contactUrl(values.phone)}</a>
+          </>}
           <label>Fundo<input type="color" value={block.background} onChange={e => patchBlock({ background: e.target.value })} /></label>
           <label>Alinhamento<select value={block.align} onChange={e => patchBlock({ align: e.target.value as LandingBlock["align"] })}><option value="left">Esquerda</option><option value="center">Centro</option></select></label>
           <div className="buttons compact"><button onClick={() => reorder(-1)}>Subir bloco</button><button onClick={() => reorder(1)}>Descer bloco</button><button className="danger" onClick={remove}>Excluir bloco</button></div>

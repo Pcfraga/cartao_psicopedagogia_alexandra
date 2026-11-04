@@ -140,6 +140,8 @@ main { padding: 24px 28px 60px; max-width: 1920px; margin: auto; }
 .studio-inspector .check { font-size: 12px; margin: 16px 0; align-items: center; gap: 8px; }
 .studio-inspector .check input { width: 18px; height: 18px; min-height: 18px; margin: 0; }
 .studio-inspector .compact { margin-bottom: 16px; }
+.landing-image-preview { display: block; width: 100%; max-height: 180px; margin: 12px 0; border: 1px solid #dfe1e9; border-radius: 12px; object-fit: cover; }
+.contact-link-preview { display: block; margin: -8px 0 16px; color: #675289; font-size: 12px; overflow-wrap: anywhere; }
 .add-tools { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; margin-bottom: 20px; }
 .add-tools button { padding: 8px 4px; background: #f0edf8; color: #675289; font-size: 12px; }
 .shape-picker { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; margin-bottom: 16px; }
