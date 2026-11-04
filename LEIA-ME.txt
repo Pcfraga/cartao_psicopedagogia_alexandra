@@ -117,7 +117,7 @@ EDITOR VISUAL
 1. Entre no painel e crie sua conta; confirme o e-mail.
 2. Edite texto, cores e foto. A prévia de post/story é o mesmo canvas usado no PNG baixado.
 3. Salvar projeto baixa um JSON com textos e foto; Abrir projeto JSON importa inclusive arquivos da versão antiga.
-4. Baixar imagem PNG gera 1080 x 1080 ou 1080 x 1920. A landing pode ser baixada como HTML independente com foto incluída.
+4. Baixar imagem JPG gera 1080 x 1080 ou 1080 x 1920 em arquivo otimizado. A landing pode ser baixada como HTML independente com foto incluída e otimizada.
 5. Salvar online mantém um rascunho privado no PostgreSQL, separado por conta Firebase.
 6. Defina um endereço único, confirme a autorização da foto e clique em Publicar / atualizar landing.
 7. Compartilhe http://localhost:3000/projetos/seu-endereco apenas em testes locais. Em produção, o link usa VITE_PUBLIC_SITE_URL e pode ser aberto sem login.

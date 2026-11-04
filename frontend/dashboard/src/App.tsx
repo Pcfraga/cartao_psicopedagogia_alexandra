@@ -5,7 +5,7 @@ import { onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndP
 import { renderToStaticMarkup } from "react-dom/server";
 import { defaults, designLimits, pageUrl, parseProjectFile, parseValues, validateSlug,
   type Project, type ProjectFile, type ProjectValues } from "@atelie/studio";
-import { download, loadPhoto, pngPhoto, renderPost } from "@atelie/studio/canvas";
+import { download, jpegBlob, jpegPhoto, loadPhoto, pngPhoto, renderPost } from "@atelie/studio/canvas";
 import { LandingContent } from "@atelie/studio/landing";
 import landingCss from "@atelie/studio/landing.css?raw";
 import "@atelie/studio/landing.css";
@@ -177,23 +177,21 @@ function Editor({ user, notice, setNotice }: { user: User | null; notice: string
   }
   async function exportMaterial() {
     if (values.format === "landing") {
-      const file = await projectFile();
+      const photoForLanding = await jpegPhoto(photo);
       const html = '<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Landing page</title><style>body{margin:0}' +
-        landingCss + "</style></head><body>" + renderToStaticMarkup(<LandingContent values={file.values} photo={file.photo} />) + "</body></html>";
+        landingCss + "</style></head><body>" + renderToStaticMarkup(<LandingContent values={values} photo={photoForLanding} />) + "</body></html>";
       download(new Blob([html], { type: "text/html;charset=utf-8" }), "landing-alexandra.html");
     } else {
       const target = document.createElement("canvas");
       await renderPost(target, values, photo);
-      const blob = await new Promise<Blob | null>(resolve => target.toBlob(resolve, "image/png"));
-      if (!blob) throw new Error("Não foi possível gerar o PNG.");
-      download(blob, `${values.format === "story" ? "story" : "post"}-alexandra.png`);
+      download(await jpegBlob(target), `${values.format === "story" ? "story" : "post"}-alexandra.jpg`);
     }
     setNotice("Material baixado.");
   }
   const link = current?.publication ? pageUrl(current.publication.slug, publicOrigin) : null;
   return <><section className="toolbar">
     <div className="buttons"><button className="primary" disabled={busy} onClick={() => run(exportMaterial)}>
-      {values.format === "landing" ? "Baixar landing HTML" : "Baixar imagem PNG"}</button>
+      {values.format === "landing" ? "Baixar landing HTML" : "Baixar imagem JPG"}</button>
       <button disabled={busy} onClick={() => run(async () => { download(new Blob([JSON.stringify(await projectFile())], { type: "application/json" }), "projeto-alexandra.json"); setDirty(false); setNotice("Projeto salvo com camadas, textos, cores e fotos."); })}>Salvar projeto</button>
       <button disabled={busy} onClick={() => importFile.current?.click()}>Abrir projeto JSON</button>
       <button disabled={busy || !user} onClick={() => run(async () => { await saveOnline(); setNotice("Rascunho salvo na conta. Para alterar a versão pública, clique em Publicar."); })}>Salvar online</button></div>

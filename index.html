@@ -239,7 +239,7 @@
   </header>
   <section class="save-bar" aria-label="Salvar e baixar seu trabalho">
     <div class="save-buttons">
-      <button class="button button-primary" id="export" type="button">Baixar imagem PNG</button>
+      <button class="button button-primary" id="export" type="button">Baixar imagem JPG</button>
       <button class="button button-secondary" id="save-project" type="button">Salvar projeto</button>
       <button class="button button-secondary" id="open-project" type="button">Abrir projeto</button>
       <a class="button button-secondary" href="projetos/">Projetos publicados</a>
@@ -472,7 +472,7 @@
         elements.postCopy.hidden = isLanding;
         elements.landingContent.hidden = !isLanding;
         elements.hint.textContent = isLanding ? "Página responsiva · exporte em HTML" : isStory ? "1080 × 1920 px" : "1080 × 1080 px";
-        elements.export.textContent = isLanding ? "Baixar landing page HTML" : "Baixar imagem PNG";
+        elements.export.textContent = isLanding ? "Baixar landing page HTML" : "Baixar imagem JPG";
         document.querySelector("#preview-title").textContent = values.title || "Seu título aparece aqui";
         document.querySelector("#preview-subtitle").textContent = values.subtitle || "Seu texto de apoio aparece aqui";
         document.querySelector("#preview-name").textContent = values.name || "Seu nome";
@@ -541,6 +541,20 @@
         if (!context) throw new Error("Seu navegador não conseguiu preparar a foto.");
         context.drawImage(image, 0, 0);
         return canvas.toDataURL("image/png");
+      }
+
+      async function landingPhoto() {
+        const image = await loadImage(photoSource);
+        const scale = Math.min(1, 1920 / Math.max(image.naturalWidth, image.naturalHeight));
+        const canvas = document.createElement("canvas");
+        canvas.width = Math.round(image.naturalWidth * scale);
+        canvas.height = Math.round(image.naturalHeight * scale);
+        const context = canvas.getContext("2d");
+        if (!context) throw new Error("Seu navegador não conseguiu preparar a foto.");
+        context.fillStyle = "#fff";
+        context.fillRect(0, 0, canvas.width, canvas.height);
+        context.drawImage(image, 0, 0, canvas.width, canvas.height);
+        return canvas.toDataURL("image/jpeg", 0.82);
       }
 
       function validateProject(project) {
@@ -727,11 +741,11 @@
       }
 
       async function exportLanding(values) {
-        const imagePath = await embeddedPhoto();
+        const imagePath = await landingPhoto();
         const page = createLandingPage(values, imagePath);
         const blob = new Blob([page], { type: "text/html;charset=utf-8" });
         downloadFile(blob, "landing-page-alexandra.html");
-        setStatus("Landing page baixada com a foto incluída. O HTML está pronto para usar.");
+        setStatus("Landing page baixada com a foto otimizada. O HTML está pronto para usar.");
       }
 
       async function exportPng(values) {
@@ -743,9 +757,9 @@
         const context = canvas.getContext("2d");
         if (!context) throw new Error("Seu navegador não conseguiu preparar a imagem.");
         renderPost(context, image, values);
-        const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/png"));
-        if (!blob) throw new Error("Não foi possível criar o arquivo PNG.");
-        downloadFile(blob, isStory ? "story-alexandra.png" : "post-alexandra.png");
+        const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/jpeg", 0.84));
+        if (!blob) throw new Error("Não foi possível criar a imagem JPG.");
+        downloadFile(blob, isStory ? "story-alexandra.jpg" : "post-alexandra.jpg");
       }
 
       elements.photo.addEventListener("change", () => {
@@ -784,7 +798,7 @@
         try {
           if (values.format === "landing") await exportLanding(values);
           else await exportPng(values);
-          if (values.format !== "landing") setStatus("Imagem baixada no tamanho ideal para publicação.");
+          if (values.format !== "landing") setStatus("Imagem JPG baixada no tamanho ideal para publicação.");
         } catch (error) {
           setStatus(error instanceof Error ? error.message : "Não foi possível exportar o material.", true);
         } finally {

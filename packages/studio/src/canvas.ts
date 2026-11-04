@@ -153,6 +153,25 @@ export async function pngPhoto(source: string): Promise<string> {
   if (photo.length > 6_990_530) throw new Error("A foto ultrapassa 5 MB. Escolha uma imagem menor.");
   return photo;
 }
+export async function jpegPhoto(source: string): Promise<string> {
+  const image = await loadPhoto(source);
+  const scale = Math.min(1, 1920 / Math.max(image.naturalWidth, image.naturalHeight));
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.round(image.naturalWidth * scale);
+  canvas.height = Math.round(image.naturalHeight * scale);
+  const context = canvas.getContext("2d");
+  if (!context) throw new Error("Seu navegador não suporta a criação de imagens.");
+  context.fillStyle = "#fff";
+  context.fillRect(0, 0, canvas.width, canvas.height);
+  context.drawImage(image, 0, 0, canvas.width, canvas.height);
+  return canvas.toDataURL("image/jpeg", 0.82);
+}
+export function jpegBlob(canvas: HTMLCanvasElement): Promise<Blob> {
+  return new Promise((resolve, reject) => canvas.toBlob(blob => {
+    if (blob) resolve(blob);
+    else reject(new Error("Não foi possível gerar a imagem JPG."));
+  }, "image/jpeg", 0.84));
+}
 function lines(context: CanvasRenderingContext2D, text: string, width: number): string[] {
   const result: string[] = [];
   let line = "";
