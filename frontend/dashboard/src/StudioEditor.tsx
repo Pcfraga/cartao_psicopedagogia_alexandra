@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState, type PointerEvent } from "react";
 import { contactUrl, element, fonts, shapes, landingBlock, limits, resizeElement, type ResizeHandle, type DesignElement, type LandingBlock, type ProjectValues } from "@atelie/studio";
-import { createTemplate, pngPhoto, renderPost } from "@atelie/studio/canvas";
+import { createTemplate, jpegPhoto, pngPhoto, renderPost } from "@atelie/studio/canvas";
 import { LandingContent } from "@atelie/studio/landing";
 
 type Props = {
@@ -216,7 +216,7 @@ export function StudioEditor({ values, photo, busy, onChange, onPhoto, notify }:
     setUploading(true);
     const url = URL.createObjectURL(file);
     try {
-      const source = await pngPhoto(url);
+      const source = action === "photo" ? await pngPhoto(url) : await jpegPhoto(url);
       if (action === "photo") onPhoto(source);
       else if (action === "replace") patch({ src: source });
       else if (action === "block") patchBlock({ image: source });

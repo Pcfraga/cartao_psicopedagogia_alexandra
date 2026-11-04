@@ -8,7 +8,9 @@ namespace Cartao.Api.Features;
 public static partial class Validation
 {
     public const string PngDataUrlPrefix = "data:image/png;base64,";
+    private const string JpegDataUrlPrefix = "data:image/jpeg;base64,";
     public const int MaxPhotoBytes = 5 * 1024 * 1024;
+    public const int MaxEmbeddedPhotoBytes = 650 * 1024;
     public const int MaxPhotoDimension = 1920;
 
     private static readonly (string Key, int MaxLength)[] TextFields =
@@ -106,7 +108,8 @@ public static partial class Validation
 
     private static bool Image(JsonElement obj, string key) =>
         obj.TryGetProperty(key, out var value) && value.ValueKind == JsonValueKind.String &&
-        (value.GetString() == "photo" || DecodePng(value.GetString()) is not null);
+        (value.GetString() == "photo" || DecodePng(value.GetString()) is not null ||
+            DecodeJpeg(value.GetString()) is not null);
 
     private static bool ValidateStudio(JsonElement root, bool design)
     {
@@ -180,6 +183,43 @@ public static partial class Validation
         if (!bytes[^12..].SequenceEqual(PngEnd)) return null;
 
         return bytes.ToArray();
+    }
+
+    private static byte[]? DecodeJpeg(string? dataUrl)
+    {
+        if (dataUrl is null || !dataUrl.StartsWith(JpegDataUrlPrefix, StringComparison.Ordinal)) return null;
+        var base64 = dataUrl.AsSpan(JpegDataUrlPrefix.Length);
+        if (base64.Length == 0 || base64.Length > (MaxEmbeddedPhotoBytes + 2) / 3 * 4) return null;
+        var buffer = new byte[base64.Length / 4 * 3];
+        if (!Convert.TryFromBase64Chars(base64, buffer, out var written) || written > MaxEmbeddedPhotoBytes) return null;
+        var bytes = buffer.AsSpan(0, written);
+        if (bytes.Length < 4 || bytes[0] != 0xFF || bytes[1] != 0xD8 ||
+            bytes[^2] != 0xFF || bytes[^1] != 0xD9) return null;
+
+        var position = 2;
+        var hasDimensions = false;
+        while (position < bytes.Length - 2)
+        {
+            if (bytes[position++] != 0xFF) return null;
+            while (position < bytes.Length && bytes[position] == 0xFF) position++;
+            if (position >= bytes.Length) return null;
+            var marker = bytes[position++];
+            if (marker == 0xD9 || marker == 0xDA) break;
+            if (marker == 0x01 || marker is >= 0xD0 and <= 0xD7) continue;
+            if (position + 2 > bytes.Length) return null;
+            var segmentLength = BinaryPrimitives.ReadUInt16BigEndian(bytes[position..]);
+            if (segmentLength < 2 || position + segmentLength > bytes.Length) return null;
+            if (marker is 0xC0 or 0xC1 or 0xC2 or 0xC3 or 0xC5 or 0xC6 or 0xC7 or 0xC9 or 0xCA or 0xCB or 0xCD or 0xCE or 0xCF)
+            {
+                if (segmentLength < 7) return null;
+                var height = BinaryPrimitives.ReadUInt16BigEndian(bytes[(position + 3)..]);
+                var width = BinaryPrimitives.ReadUInt16BigEndian(bytes[(position + 5)..]);
+                if (width is 0 or > MaxPhotoDimension || height is 0 or > MaxPhotoDimension) return null;
+                hasDimensions = true;
+            }
+            position += segmentLength;
+        }
+        return hasDimensions ? bytes.ToArray() : null;
     }
 
     public static string ToDataUrl(byte[] png) => PngDataUrlPrefix + Convert.ToBase64String(png);

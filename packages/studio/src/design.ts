@@ -58,7 +58,10 @@ export interface LandingDesign {
   version: 1;
   blocks: LandingBlock[];
 }
-export const designLimits = { elements: 40, blocks: 16, photoBytes: 5 * 1024 * 1024, fileBytes: 7_500_000 };
+export const designLimits = {
+  elements: 40, blocks: 16, photoBytes: 5 * 1024 * 1024,
+  embeddedPhotoBytes: 650 * 1024, fileBytes: 24 * 1024 * 1024
+};
 export type ResizeHandle = "right" | "left" | "top" | "bottom" | "corner";
 export function resizeElement(item: DesignElement, handle: ResizeHandle, dx: number, dy: number) {
   const angle = item.rotation * Math.PI / 180;
@@ -80,7 +83,10 @@ const color = (v: unknown): v is string => typeof v === "string" && /^#[a-f0-9]{
 const string = (v: unknown, max: number): v is string => typeof v === "string" && v.length <= max && !v.includes("\0");
 const number = (v: unknown, min: number, max: number): v is number => typeof v === "number" && Number.isFinite(v) && v >= min && v <= max;
 export function validImage(v: unknown): v is string {
-  return v === "photo" || (typeof v === "string" && v.length <= 6_990_530 && /^data:image\/png;base64,iVBORw0KGgo[A-Za-z0-9+/=]+$/.test(v));
+  return v === "photo" || (typeof v === "string" && (
+    (v.length <= 6_990_530 && /^data:image\/png;base64,iVBORw0KGgo[A-Za-z0-9+/=]+$/.test(v)) ||
+    (v.length <= 900_000 && /^data:image\/jpeg;base64,[A-Za-z0-9+/=]+$/.test(v))
+  ));
 }
 export function parseDesign(raw: unknown): Design {
   if (!record(raw) || raw.version !== 1 || (raw.height !== 1080 && raw.height !== 1920) || !color(raw.background) || !Array.isArray(raw.elements) || raw.elements.length > designLimits.elements) {

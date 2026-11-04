@@ -38,9 +38,9 @@ Public: `GET /api/pages/{slug}`. Errors use `application/problem+json`; stale re
 projects omit these fields and retain their original rendering. Design supports
 up to 40 validated text/image/shape layers; landing supports 1–16 responsive
 blocks, with up to 12 service items each. Image sources are `photo` (the primary
-photo) or validated PNG data URLs; remote URLs and SVG are rejected.
+photo), validated PNG data URLs, or compressed JPEG data URLs up to 650 KB;
+remote URLs and SVG are rejected.
 
 Both draft and publication snapshots preserve these fields in the existing JSONB
 column, without a schema migration. Deploy the API before the updated frontends.
-The existing request-size limit still applies to the complete composition,
-including all embedded photos; the editor limits saved files to 7.5 MB.
+The API accepts requests up to 25 MB; the editor limits saved project files to 24 MB.

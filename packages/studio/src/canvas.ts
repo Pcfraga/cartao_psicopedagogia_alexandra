@@ -1,5 +1,5 @@
 import type { ProjectValues } from "./model";
-import { element, type Design, type DesignElement } from "./design.ts";
+import { designLimits, element, type Design, type DesignElement } from "./design.ts";
 
 export function createTemplate(values: ProjectValues, style: "editorial" | "bold" | "minimal" = "editorial"): Design {
   const h = values.format === "story" ? 1920 : 1080;
@@ -155,16 +155,36 @@ export async function pngPhoto(source: string): Promise<string> {
 }
 export async function jpegPhoto(source: string): Promise<string> {
   const image = await loadPhoto(source);
-  const scale = Math.min(1, 1920 / Math.max(image.naturalWidth, image.naturalHeight));
   const canvas = document.createElement("canvas");
+  let scale = Math.min(1, 1920 / Math.max(image.naturalWidth, image.naturalHeight));
   canvas.width = Math.round(image.naturalWidth * scale);
   canvas.height = Math.round(image.naturalHeight * scale);
   const context = canvas.getContext("2d");
   if (!context) throw new Error("Seu navegador não suporta a criação de imagens.");
-  context.fillStyle = "#fff";
-  context.fillRect(0, 0, canvas.width, canvas.height);
-  context.drawImage(image, 0, 0, canvas.width, canvas.height);
-  return canvas.toDataURL("image/jpeg", 0.82);
+  for (;;) {
+    context.fillStyle = "#fff";
+    context.fillRect(0, 0, canvas.width, canvas.height);
+    context.drawImage(image, 0, 0, canvas.width, canvas.height);
+    for (const quality of [0.82, 0.72, 0.62, 0.52, 0.42]) {
+      const blob = await new Promise<Blob | null>(resolve => canvas.toBlob(resolve, "image/jpeg", quality));
+      if (!blob) throw new Error("Não foi possível comprimir a foto.");
+      if (blob.size <= designLimits.embeddedPhotoBytes) {
+        return new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => typeof reader.result === "string"
+            ? resolve(reader.result)
+            : reject(new Error("Não foi possível preparar a foto comprimida."));
+          reader.onerror = () => reject(new Error("Não foi possível ler a foto comprimida."));
+          reader.readAsDataURL(blob);
+        });
+      }
+    }
+    if (Math.max(canvas.width, canvas.height) <= 640) break;
+    scale = Math.max(640 / Math.max(image.naturalWidth, image.naturalHeight), scale * 0.8);
+    canvas.width = Math.round(image.naturalWidth * scale);
+    canvas.height = Math.round(image.naturalHeight * scale);
+  }
+  throw new Error("Não foi possível comprimir a foto para o tamanho permitido. Escolha outra imagem.");
 }
 export function jpegBlob(canvas: HTMLCanvasElement): Promise<Blob> {
   return new Promise((resolve, reject) => canvas.toBlob(blob => {

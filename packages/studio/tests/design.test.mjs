@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { defaults, element, shapes, landingBlock, parseValues, parseProjectFile, resizeElement } from "../src/model.ts";
 import { createTemplate, renderDesign } from "../src/canvas.ts";
 const photo = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQIHWP4z8DwHwAFgAI/ScLjtAAAAABJRU5ErkJggg==";
+const jpeg = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2Q==";
 
 test("all shapes and text effects survive project export/import without changing legacy layers", () => {
   const effects = { showText: true, textBackground: true, padding: 32, borderWidth: 5,
@@ -163,11 +164,19 @@ test("JSON files preserve multiple photo, shape and text layers plus responsive 
   const file = { app: "alexandra-content-studio", version: 2, values, photo };
   assert.deepEqual(parseProjectFile(JSON.parse(JSON.stringify(file))), file);
 });
+test("compressed JPEG photos are accepted in design layers and landing blocks", () => {
+  const values = { ...defaults, design: { version: 1, height: 1080, background: "#ffffff", elements: [
+    element("image", { src: jpeg })
+  ] }, landing: { version: 1, blocks: [landingBlock("hero"), { ...landingBlock("gallery"), image: jpeg }] } };
+  assert.equal(parseValues(values).design.elements[0].src, jpeg);
+  assert.equal(parseValues(values).landing.blocks[1].image, jpeg);
+});
 test("rejects malformed or oversized layers and unsafe photo sources", () => {
   const layer = element("text");
   const parse = elements => parseValues({ ...defaults, design: { version: 1, height: 1080, background: "#ffffff", elements } });
   for (const patch of [{ width: 0 }, { opacity: NaN }, { rotation: Infinity }, { fontSize: 241 },
     { src: "https://example.com/image.png" }, { src: "data:image/svg+xml,<svg/>" },
+    { src: `data:image/jpeg;base64,${"A".repeat(900_000)}` },
     { fontFamily: "url(evil)" }, { color: "red" }, { text: "x".repeat(2001) }, { locked: "false" }]) {
     assert.throws(() => parse([{ ...layer, ...patch }]));
   }

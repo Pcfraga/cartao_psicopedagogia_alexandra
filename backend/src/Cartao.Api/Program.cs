@@ -6,8 +6,8 @@ using Microsoft.Extensions.Diagnostics.HealthChecks;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// 5 MB PNG as base64 (~6.7 MB) plus JSON values.
-builder.WebHost.ConfigureKestrel(o => o.Limits.MaxRequestBodySize = 7_864_320);
+// Allow the primary PNG and compressed photos embedded in a layered project.
+builder.WebHost.ConfigureKestrel(o => o.Limits.MaxRequestBodySize = 25 * 1024 * 1024);
 
 builder.Services.AddProblemDetails();
 builder.Services.AddDbContext<AppDbContext>((sp, o) =>

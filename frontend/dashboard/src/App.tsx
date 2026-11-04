@@ -166,7 +166,7 @@ function Editor({ user, notice, setNotice }: { user: User | null; notice: string
   }
   async function projectFile(): Promise<ProjectFile> {
     const file: ProjectFile = { app: "alexandra-content-studio", version: values.design || values.landing ? 2 : 1, values: parseValues(values), photo: await pngPhoto(photo) };
-    if (new Blob([JSON.stringify(file)]).size > designLimits.fileBytes) throw new Error("O projeto ultrapassa 7,5 MB. Use fotos menores ou menos fotos antes de salvar.");
+    if (new Blob([JSON.stringify(file)]).size > designLimits.fileBytes) throw new Error("O projeto ultrapassa 24 MB. Reduza a quantidade de fotos antes de salvar.");
     return file;
   }
   async function saveOnline() {
@@ -202,7 +202,7 @@ function Editor({ user, notice, setNotice }: { user: User | null; notice: string
     <input type="file" accept=".json,application/json" hidden ref={importFile} onChange={event => {
       const file = event.target.files?.[0]; event.target.value = "";
       if (file) void run(async () => {
-        if (file.size > designLimits.fileBytes) throw new Error("O projeto é grande demais (limite 7,5 MB).");
+        if (file.size > designLimits.fileBytes) throw new Error("O projeto é grande demais (limite 24 MB).");
         const parsed = parseProjectFile(JSON.parse(await file.text())); await loadPhoto(parsed.photo);
         setValues(parsed.values); setPhoto(parsed.photo); setCurrent(null); loadedId.current = null; setDirty(false); setSlug(""); setConsent(false); setConfirmDelete(false); setNotice("Projeto JSON aberto. Salvar online criará uma nova cópia.");
       });

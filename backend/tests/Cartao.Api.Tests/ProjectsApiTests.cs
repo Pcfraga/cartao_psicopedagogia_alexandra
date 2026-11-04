@@ -207,11 +207,13 @@ public sealed class ProjectsApiTests : IAsyncLifetime
         var client = _factory.ClientFor("designer");
         var values = Values();
         values["design"] = StudioDesign();
+        values["design"]!["elements"]![1]!["src"] = TestJpegDataUrl();
         values["design"]!["elements"]![1]!["fit"] = "contain";
         values["landing"] = JsonNode.Parse("""
             {"version":1,"blocks":[{"id":"hero","type":"hero","title":"Capa personalizada","body":"Apresentação",
             "items":["Apoio escolar"],"image":"photo","background":"#ffffff","align":"left"}]}
             """);
+        values["landing"]!["blocks"]![0]!["image"] = TestJpegDataUrl();
         var created = await client.PostAsJsonAsync("/api/projects", Save(values, 0));
         Assert.Equal(HttpStatusCode.Created, created.StatusCode);
         var data = await Json(created);
@@ -219,7 +221,9 @@ public sealed class ProjectsApiTests : IAsyncLifetime
         var read = await Json(await client.GetAsync($"/api/projects/{id}"));
         Assert.Equal(3, read.GetProperty("values").GetProperty("design").GetProperty("elements").GetArrayLength());
         Assert.Equal("contain", read.GetProperty("values").GetProperty("design").GetProperty("elements")[1].GetProperty("fit").GetString());
+        Assert.Equal(TestJpegDataUrl(), read.GetProperty("values").GetProperty("design").GetProperty("elements")[1].GetProperty("src").GetString());
         Assert.Equal("Capa personalizada", read.GetProperty("values").GetProperty("landing").GetProperty("blocks")[0].GetProperty("title").GetString());
+        Assert.Equal(TestJpegDataUrl(), read.GetProperty("values").GetProperty("landing").GetProperty("blocks")[0].GetProperty("image").GetString());
         Assert.Equal(HttpStatusCode.OK, (await client.PostAsJsonAsync($"/api/projects/{id}/publish", new { slug = "editor-visual", revision = 1 })).StatusCode);
         values["design"]!["elements"]![0]!["text"] = "Novo texto";
         values["design"]!["elements"]![1]!["fit"] = "stretch";
@@ -227,6 +231,7 @@ public sealed class ProjectsApiTests : IAsyncLifetime
         var page = await Json(await _factory.ClientFor(null).GetAsync("/api/pages/editor-visual"));
         Assert.Equal("Texto", page.GetProperty("values").GetProperty("design").GetProperty("elements")[0].GetProperty("text").GetString());
         Assert.Equal("contain", page.GetProperty("values").GetProperty("design").GetProperty("elements")[1].GetProperty("fit").GetString());
+        Assert.Equal(TestJpegDataUrl(), page.GetProperty("values").GetProperty("landing").GetProperty("blocks")[0].GetProperty("image").GetString());
         Assert.Equal(HttpStatusCode.OK, (await client.PostAsJsonAsync($"/api/projects/{id}/publish", new { slug = "editor-visual", revision = 2 })).StatusCode);
         page = await Json(await _factory.ClientFor(null).GetAsync("/api/pages/editor-visual"));
         Assert.Equal("Novo texto", page.GetProperty("values").GetProperty("design").GetProperty("elements")[0].GetProperty("text").GetString());
@@ -249,6 +254,12 @@ public sealed class ProjectsApiTests : IAsyncLifetime
             });
         return new JsonObject { ["version"] = 1, ["height"] = 1080, ["background"] = "#ffffff", ["elements"] = layers };
     }
+
+    private static string TestJpegDataUrl() =>
+        "data:image/jpeg;base64," + Convert.ToBase64String(new byte[]
+        {
+            0xFF, 0xD8, 0xFF, 0xC0, 0x00, 0x0B, 0x08, 0x00, 0x01, 0x00, 0x01, 0x01, 0x01, 0x11, 0x00, 0xFF, 0xD9
+        });
 
     [Theory]
     [InlineData("width", "0")]

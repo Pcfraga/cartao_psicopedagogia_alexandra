@@ -108,7 +108,7 @@ EDITOR VISUAL
 - O botao de contato usa o WhatsApp definido em Conteudo. A previa de landing oferece Desktop e Celular.
 - O editor preserva o trabalho ao alternar entre Editor, Meus projetos e Minha conta. Abrir outro projeto substitui o atual.
 - Antes de fechar ou recarregar, salve online ou baixe o projeto JSON. Fotos e camadas nao sao salvas automaticamente no navegador.
-- Limites: 40 camadas, 16 blocos, 12 servicos por bloco; PNG de ate 5 MB por foto e projeto JSON de ate 7,5 MB no total.
+- Limites: 40 camadas, 16 blocos, 12 servicos por bloco; PNG principal de ate 5 MB, fotos adicionais em JPG de ate 650 KB e projeto JSON de ate 24 MB.
 - JSON v1 continua abrindo; composicoes e blocos novos usam JSON v2 e exigem esta versao do editor para reabrir sem perdas.
 - Exportacao PNG usa o mesmo renderizador da previa, sem bordas de selecao. HTML baixado inclui as fotos e os blocos.
 - Camadas e blocos sao armazenados em values.design e values.landing (JSONB), junto ao rascunho e ao snapshot publicado. Nao exige migration de tabela.
@@ -126,7 +126,7 @@ EDITOR VISUAL
 10. Salvar rascunho não altera a publicação. Publicar faz um snapshot dos textos e da foto.
 11. Retirar do ar remove a publicação, sem apagar o rascunho. Excluir projeto exige confirmação e remove ambos.
 - Edições concorrentes são rejeitadas com conflito; reabra o projeto para carregar a revisão mais recente.
-- Fotos são normalizadas para PNG de até 1920 px e 5 MB. No banco, são armazenadas junto ao projeto/snapshot.
+- A foto principal é normalizada para PNG de até 1920 px e 5 MB; fotos adicionais são comprimidas em JPG de até 650 KB. O projeto JSON pode ter até 24 MB.
 - Para simplificar esta primeira migração, a lista retorna fotos inline e pode ficar grande; não há paginação ou armazenamento externo de mídia ainda.
 - O editor guarda textos localmente no navegador e a foto somente ao salvar um projeto. Saia e feche o editor em computadores compartilhados.
 
