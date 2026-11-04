@@ -165,7 +165,26 @@ function Editor({ user, notice, setNotice }: { user: User | null; notice: string
     try { await action(); } catch (error) { setNotice(errorText(error)); } finally { setBusy(false); }
   }
   async function projectFile(): Promise<ProjectFile> {
-    const file: ProjectFile = { app: "alexandra-content-studio", version: values.design || values.landing ? 2 : 1, values: parseValues(values), photo: await pngPhoto(photo) };
+    const projectValues = parseValues(values);
+    const compressedPhotos = new Map<string, string>();
+    async function compressPhoto(source: string): Promise<string> {
+      if (!source.startsWith("data:image/png;base64,")) return source;
+      const cached = compressedPhotos.get(source);
+      if (cached) return cached;
+      const compressed = await jpegPhoto(source);
+      compressedPhotos.set(source, compressed);
+      return compressed;
+    }
+    if (projectValues.design) {
+      for (const layer of projectValues.design.elements) {
+        if (layer.type === "image") layer.src = await compressPhoto(layer.src);
+      }
+    }
+    if (projectValues.landing) {
+      for (const block of projectValues.landing.blocks) block.image = await compressPhoto(block.image);
+    }
+    const file: ProjectFile = { app: "alexandra-content-studio", version: projectValues.design || projectValues.landing ? 2 : 1,
+      values: projectValues, photo: await pngPhoto(photo) };
     if (new Blob([JSON.stringify(file)]).size > designLimits.fileBytes) throw new Error("O projeto ultrapassa 24 MB. Reduza a quantidade de fotos antes de salvar.");
     return file;
   }
